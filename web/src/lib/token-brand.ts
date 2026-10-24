@@ -12,7 +12,7 @@ General Public License v3.0 or later. See LICENSE.
  * is hosted by Better Stack.
  */
 export const TOKEN_BRAND = {
-  sourceRepoUrl: 'https://github.com/zeroais/token',
+  sourceRepoUrl: 'https://github.com/zeroais/thetoken',
   upstreamRepoUrl: 'https://github.com/QuantumNous/new-api',
   statusUrl: 'https://status.thetoken.dev',
   termsPath: '/user-agreement',

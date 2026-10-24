@@ -84,7 +84,7 @@ it('links Terms, Privacy, Status and the TOKEN source and hides unset Docs', asy
   )
   expect(
     within(nav).getByRole('link', { name: 'Source code' })
-  ).toHaveAttribute('href', 'https://github.com/zeroais/token')
+  ).toHaveAttribute('href', 'https://github.com/zeroais/thetoken')
   expect(within(nav).getByRole('link', { name: 'Status' })).toHaveAttribute(
     'href',
     'https://status.thetoken.dev'
