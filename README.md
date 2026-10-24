@@ -1,4 +1,12 @@
-# TOKEN engine
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/logo-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="web/public/brand/logo.svg">
+    <img alt="TOKEN" src="web/public/brand/logo.svg" width="320">
+  </picture>
+</p>
+
+# TOKEN
 
 This repository is the complete source code of the software that runs
 [TOKEN](https://thetoken.dev): the API at `https://api.thetoken.dev` and the
