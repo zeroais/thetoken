@@ -50,6 +50,9 @@ func ValidateAccountEmail(email string) (string, error) {
 	if common.EmailAliasRestrictionEnabled && strings.ContainsAny(parts[0], "+.") {
 		return "", ErrAccountEmailRestricted
 	}
+	if tokenDisposableEmailDomain(parts[1]) { // TOKEN: service/token_disposable_email.go
+		return "", ErrAccountEmailDisposable
+	}
 	return email, nil
 }
 

@@ -27,11 +27,15 @@ import {
   calculateStripeAmount,
   calculateWaffoAmount,
   calculateWaffoPancakeAmount,
+  calculateMoyasarAmount,
   requestPayment,
   requestStripePayment,
+  requestMoyasarPayment,
   isApiSuccess,
 } from '../api'
+import { PAYMENT_TYPES } from '../constants'
 import {
+  isMoyasarPayment,
   isStripePayment,
   isWaffoPayment,
   isWaffoPancakePayment,
@@ -50,6 +54,7 @@ export interface PaymentAmountCalculators {
   stripe: AmountCalculator
   waffo: AmountCalculator
   waffoPancake: AmountCalculator
+  moyasar: AmountCalculator
 }
 
 const defaultPaymentAmountCalculators: PaymentAmountCalculators = {
@@ -57,6 +62,7 @@ const defaultPaymentAmountCalculators: PaymentAmountCalculators = {
   stripe: calculateStripeAmount,
   waffo: calculateWaffoAmount,
   waffoPancake: calculateWaffoPancakeAmount,
+  moyasar: calculateMoyasarAmount,
 }
 
 export async function requestPaymentAmount(
@@ -71,6 +77,8 @@ export async function requestPaymentAmount(
     calculator = calculators.waffo
   } else if (isWaffoPancakePayment(paymentType)) {
     calculator = calculators.waffoPancake
+  } else if (isMoyasarPayment(paymentType)) {
+    calculator = calculators.moyasar
   }
 
   const response = await calculator({ amount: topupAmount })
@@ -114,7 +122,23 @@ export function usePayment() {
         setProcessing(true)
 
         const isStripe = isStripePayment(paymentType)
+        const isMoyasar = isMoyasarPayment(paymentType)
         const amount = Math.floor(topupAmount)
+
+        if (isMoyasar) {
+          // TOKEN: Moyasar hosted invoice page (charged in SAR)
+          const moyasar = await requestMoyasarPayment({
+            amount,
+            payment_method: PAYMENT_TYPES.MOYASAR,
+          })
+          if (!isApiSuccess(moyasar) || !moyasar.data?.pay_link) {
+            handleServerError(moyasar, i18next.t('Payment request failed'))
+            return false
+          }
+          window.open(moyasar.data.pay_link, '_blank')
+          toast.success(i18next.t('Redirecting to payment page...'))
+          return true
+        }
 
         const response = isStripe
           ? await requestStripePayment({

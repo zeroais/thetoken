@@ -199,10 +199,8 @@ func GetTokenKey(c *gin.Context) {
 	}
 	params := tokenAuditParams(c)
 	params["id"], params["name"] = token.Id, token.Name
-	common.SetContextKey(c, constant.ContextKeyTokenAuditSucceeded, true)
-	common.ApiSuccess(c, gin.H{
-		"key": token.GetFullKey(),
-	})
+	// TOKEN: keys are stored hashed and shown only once (AddToken, RotateTokenKey).
+	common.ApiError(c, model.ErrTokenKeyShownOnce)
 }
 
 func GetTokenStatus(c *gin.Context) {
@@ -246,7 +244,7 @@ func GetTokenUsage(c *gin.Context) {
 	}
 	tokenKey := parts[1]
 
-	token, err := model.GetTokenByKey(strings.TrimPrefix(tokenKey, "sk-"), false)
+	token, err := model.GetTokenByKey(model.HashTokenKey(tokenKey), false) // TOKEN: keys stored hashed
 	if err != nil {
 		common.SysError("failed to get token by key: " + err.Error())
 		common.ApiErrorI18n(c, i18n.MsgTokenGetInfoFailed)
@@ -355,6 +353,8 @@ func AddToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",
+		// TOKEN: the only time the key is shown; only its hash is stored.
+		"data": gin.H{"id": cleanToken.Id, "name": cleanToken.Name, "key": "sk-" + key},
 	})
 }
 
@@ -533,20 +533,7 @@ func GetTokenKeysBatch(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgBatchTooMany, map[string]any{"Max": 100})
 		return
 	}
-	userId := c.GetInt("id")
-	tokens, err := model.GetTokenKeysByIds(tokenBatch.Ids, userId)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	keysMap := make(map[int]string)
-	returnedIDs := make([]int, 0, len(tokens))
-	for _, t := range tokens {
-		keysMap[t.Id] = t.GetFullKey()
-		returnedIDs = append(returnedIDs, t.Id)
-	}
-	params["count"] = len(tokens)
-	params["returned_ids"] = returnedIDs
-	common.SetContextKey(c, constant.ContextKeyTokenAuditSucceeded, true)
-	common.ApiSuccess(c, gin.H{"keys": keysMap})
+	_ = params
+	// TOKEN: keys are stored hashed and shown only once (AddToken, RotateTokenKey).
+	common.ApiError(c, model.ErrTokenKeyShownOnce)
 }

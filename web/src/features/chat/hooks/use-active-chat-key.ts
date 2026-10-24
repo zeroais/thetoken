@@ -19,32 +19,59 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 import { t } from 'i18next'
 
-import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
+import { createApiKey, rotateApiKey, searchApiKeys } from '@/features/keys/api'
 import { API_KEY_STATUS } from '@/features/keys/constants'
+import {
+  getRememberedTokenKey,
+  rememberTokenKey,
+} from '@/features/keys/lib/token-key-store'
 import {
   requireServerSuccess,
   createServerError,
 } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
+// TOKEN: keys are stored hashed and cannot be read back, so chat links use a
+// dedicated key. It is created on first use and rotated when this tab does
+// not hold it yet (e.g. after a reload); the user's other keys are untouched.
+export const CHAT_KEY_NAME = 'Console chat'
+
 export async function fetchActiveChatKey() {
-  const result = await getApiKeys({ p: 1, size: 50 })
+  const result = await searchApiKeys({ keyword: CHAT_KEY_NAME, p: 1, size: 20 })
   if (!result.success) {
     throw createServerError(result, t('Failed to load API keys'))
   }
 
-  const items = result.data?.items ?? []
-  const active = items.find((item) => item.status === API_KEY_STATUS.ENABLED)
-  if (!active) {
-    throw new Error('No enabled API keys found. Create or enable one first.')
+  const dedicated = (result.data?.items ?? []).find(
+    (item) =>
+      item.name === CHAT_KEY_NAME && item.status === API_KEY_STATUS.ENABLED
+  )
+  if (dedicated) {
+    const known = getRememberedTokenKey(dedicated.id)
+    if (known) return known
+    const rotated = await rotateApiKey(dedicated.id)
+    if (!rotated.success || !rotated.data?.key) {
+      throw createServerError(rotated, t('Failed to load API keys'))
+    }
+    return rememberTokenKey(dedicated.id, rotated.data.key)
   }
 
-  const keyResult = await fetchTokenKey(active.id)
-  if (!keyResult.success || !keyResult.data?.key) {
-    throw createServerError(keyResult, t('Failed to load API keys'))
+  const created = await createApiKey({
+    name: CHAT_KEY_NAME,
+    remain_quota: 0,
+    expired_time: -1,
+    unlimited_quota: true,
+    model_limits_enabled: false,
+    model_limits: '',
+    allow_ips: '',
+    group: '',
+    auto_groups: [],
+    cross_group_retry: false,
+  })
+  if (!created.success || !created.data?.key) {
+    throw createServerError(created, t('Failed to load API keys'))
   }
-
-  return `sk-${keyResult.data.key}`
+  return rememberTokenKey(created.data.id, created.data.key)
 }
 
 /**

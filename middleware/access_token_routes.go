@@ -88,6 +88,8 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"POST /api/user/amount":                        accessTokenScopeRule("wallet:read"),
 	"POST /api/user/stripe/pay":                    accessTokenScopeRule("wallet:write"),
 	"POST /api/user/stripe/amount":                 accessTokenScopeRule("wallet:read"),
+	"POST /api/user/moyasar/pay":                   accessTokenScopeRule("wallet:write"), // TOKEN
+	"POST /api/user/moyasar/amount":                accessTokenScopeRule("wallet:read"),  // TOKEN
 	"POST /api/user/creem/pay":                     accessTokenScopeRule("wallet:write"),
 	"POST /api/user/waffo/amount":                  accessTokenScopeRule("wallet:read"),
 	"POST /api/user/waffo/pay":                     accessTokenScopeRule("wallet:write"),
@@ -221,6 +223,7 @@ var accessTokenRouteRules = map[string]accessTokenRouteRule{
 	"DELETE /api/token/:id":      accessTokenScopeRule("api_key:write"),
 	"POST /api/token/batch":      accessTokenScopeRule("api_key:write"),
 	"POST /api/token/batch/keys": accessTokenScopeRule("api_key:reveal"),
+	"POST /api/token/:id/rotate": accessTokenScopeRule("api_key:write"), // TOKEN
 
 	// router/api-router.go: /api/redemption
 	"GET /api/redemption/":           accessTokenScopeRule("redemption:read"),

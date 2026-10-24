@@ -66,6 +66,9 @@ func Disable2FA(c *gin.Context) {
 	}
 	identity, _ := middleware.GetStepUpIdentity(c)
 	userId := identity.UserID
+	if refuseRemovingLastAdminFactor(c, userId, "totp") { // TOKEN: keep an admin factor
+		return
+	}
 	if err := model.DisableTwoFAForSession(identity); err != nil {
 		writeSecurityOperationError(c, err)
 		return

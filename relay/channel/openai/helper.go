@@ -212,6 +212,9 @@ func HandleFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, lastStream
 
 		info.ClaudeConvertInfo.Usage = usage
 
+		// TOKEN: count this send like HandleStreamFormat does; otherwise a
+		// stream with a single earlier chunk repeats message_start here.
+		info.SendResponseCount++
 		result, err := service.ConvertStreamResponse(c, info, types.RelayFormatClaude, &streamResponse)
 		if err != nil {
 			common.SysLog("error converting Claude stream response: " + err.Error())
@@ -224,6 +227,25 @@ func HandleFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, lastStream
 		}
 		for _, resp := range claudeResponses {
 			_ = helper.ClaudeData(c, *resp)
+		}
+		// TOKEN: an upstream stream that ends without its finish chunk (seen
+		// with reasoning models ending right after the reasoning) left the Anthropic
+		// stream open: no content_block_stop, message_delta or message_stop.
+		// Close it with the converter's own finalizer, carrying this usage.
+		if !info.ClaudeConvertInfo.Done {
+			state, err := relayconvert.NewResponseStreamState(types.RelayFormatOpenAI, types.RelayFormatClaude, relayconvert.ResponseStreamOptions{})
+			if err == nil {
+				var results []relayconvert.ResponseResult
+				results, err = service.FinalizeStreamResponse(c, info, state)
+				for _, result := range results {
+					if resp, ok := result.Value.(*dto.ClaudeResponse); ok {
+						_ = helper.ClaudeData(c, *resp)
+					}
+				}
+			}
+			if err != nil {
+				common.SysLog("error finalizing Claude stream response: " + err.Error())
+			}
 		}
 		info.ClaudeConvertInfo.Done = true
 

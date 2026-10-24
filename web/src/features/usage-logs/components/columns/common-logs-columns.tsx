@@ -75,6 +75,7 @@ import { DetailsDialog } from '../dialogs/details-dialog'
 import { LogCostDisplay } from '../log-cost-display'
 import { ModelBadge } from '../model-badge'
 import { TimingMetricsCell, StreamTpsCell } from '../timing-metrics-cell'
+import { TokenLogProvider } from '../token-log-provider'
 import { useUsageLogsContext } from '../usage-logs-provider'
 
 interface DetailSegment {
@@ -683,6 +684,7 @@ export function useCommonLogsColumns(
                 actualModel={modelInfo.actualModel}
                 responseModel={modelInfo.responseModel}
               />
+              <TokenLogProvider other={log.other} />
             </div>
           )
         },

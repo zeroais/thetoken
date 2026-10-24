@@ -34,6 +34,7 @@ func SetUpLogger(server *gin.Engine) {
 		if strings.HasPrefix(path, "/api/oauth/") || strings.HasPrefix(path, "/oauth/") {
 			path, _, _ = strings.Cut(path, "?")
 		}
+		path = redactLogQuery(path) // TOKEN: never log API keys passed as ?key=...
 		return fmt.Sprintf("[GIN] %s | %s | %s | %3d | %13v | %15s | %7s %s\n",
 			param.TimeStamp.Format("2006/01/02 - 15:04:05"),
 			tag,

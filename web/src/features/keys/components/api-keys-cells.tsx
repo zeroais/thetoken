@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
+import { KEY_SHOWN_ONCE_MESSAGE } from '../lib/token-key-store'
 import type { ApiKey } from '../types'
 import { useApiKeys } from './api-keys-provider'
 
@@ -56,15 +57,10 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
   const isCopied = copiedKeyId === apiKey.id
   const maskedKey = `sk-${apiKey.key}`
 
-  const handlePopoverOpen = useCallback(
-    (open: boolean) => {
-      setPopoverOpen(open)
-      if (open && !resolvedFullKey) {
-        resolveRealKey(apiKey.id)
-      }
-    },
-    [resolvedFullKey, resolveRealKey, apiKey.id]
-  )
+  // TOKEN: keys are shown once; only keys issued in this tab can be revealed.
+  const handlePopoverOpen = useCallback((open: boolean) => {
+    setPopoverOpen(open)
+  }, [])
 
   const handleCopy = useCallback(async () => {
     const realKey = resolvedFullKey || (await resolveRealKey(apiKey.id))
@@ -96,17 +92,14 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
         >
           <div className='space-y-2'>
             <p className='text-muted-foreground text-xs'>{t('Full API Key')}</p>
-            {isLoading ? (
-              <div className='flex items-center gap-2 py-2'>
-                <Loader2 className='size-3.5 animate-spin' />
-                <span className='text-muted-foreground text-xs'>
-                  {t('Loading...')}
-                </span>
-              </div>
+            {!resolvedFullKey ? (
+              <p className='text-muted-foreground max-w-[18rem] text-xs'>
+                {t(KEY_SHOWN_ONCE_MESSAGE)}
+              </p>
             ) : (
               <input
                 readOnly
-                value={resolvedFullKey || maskedKey}
+                value={resolvedFullKey}
                 autoFocus
                 onFocus={(e) => e.target.select()}
                 className='bg-muted/50 w-full min-w-[280px] rounded-md border px-3 py-2 font-mono text-xs outline-none'

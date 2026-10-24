@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/sidebar'
 import { useStatus } from '@/hooks/use-status'
 import { useSystemConfig } from '@/hooks/use-system-config'
+import { DEFAULT_SYSTEM_NAME } from '@/lib/constants'
+import { tokenVersionLabel } from '@/lib/token-brand'
 import { cn } from '@/lib/utils'
 
 type SystemBrandProps = {
@@ -51,9 +53,12 @@ export function SystemBrand(props: SystemBrandProps) {
   const { logo } = useSystemConfig()
 
   const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
-  const version =
-    status?.version || props.defaultVersion || t('Unknown version')
+  const name = status?.system_name || props.defaultName || DEFAULT_SYSTEM_NAME
+  const rawVersion = status?.version || props.defaultVersion
+  // TOKEN: show the TOKEN release, not New API's base tag (token-brand.ts)
+  const version = rawVersion
+    ? tokenVersionLabel(rawVersion)
+    : t('Unknown version')
 
   if (variant === 'inline') {
     return (

@@ -26,9 +26,9 @@ type SetupRequest struct {
 
 func GetSetup(c *gin.Context) {
 	setup := Setup{
-		Status: constant.Setup,
+		Status: tokenSetupComplete(), // TOKEN: shared across instances
 	}
-	if constant.Setup {
+	if setup.Status {
 		c.JSON(200, gin.H{
 			"success": true,
 			"data":    setup,
@@ -45,7 +45,7 @@ func GetSetup(c *gin.Context) {
 
 func PostSetup(c *gin.Context) {
 	// Check if setup is already completed
-	if constant.Setup {
+	if tokenSetupComplete() { // TOKEN: shared across instances
 		c.JSON(200, gin.H{
 			"success": false,
 			"message": "系统已经初始化完成",

@@ -112,7 +112,7 @@ func newResponsesWSTestRunner(t *testing.T, token *model.Token) (relay.Responses
 	})
 	request := httptest.NewRequest(http.MethodGet, "/v1/responses", nil)
 	request.RemoteAddr = "127.0.0.1:12345"
-	request.Header.Set("Authorization", "Bearer sk-"+token.Key)
+	request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 	request.Header.Set("X-Forwarded-For", "203.0.113.8")
 	request.Header.Set("Connection", "Upgrade")
 	request.Header.Set("Upgrade", "websocket")
@@ -265,7 +265,7 @@ func TestResponsesWSRequestRunnerSharesRedisSuccessLimitWithHTTP(t *testing.T) {
 	called := false
 	engine.POST("/v1/responses", middleware.TokenAuth(), middleware.ModelRequestRateLimit(), func(c *gin.Context) { called = true })
 	request := httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
-	request.Header.Set("Authorization", "Bearer sk-"+token.Key)
+	request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 	response := httptest.NewRecorder()
 	engine.ServeHTTP(response, request)
 	assert.Equal(t, http.StatusTooManyRequests, response.Code)
@@ -415,7 +415,7 @@ func newResponsesWSBillingTest(t *testing.T, expression string, handle func(*web
 	gateway := httptest.NewServer(engine)
 	fixture.gatewayURL = gateway.URL
 	t.Cleanup(gateway.Close)
-	client, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(gateway.URL, "http")+"/v1/responses", http.Header{"Authorization": []string{"Bearer sk-" + token.Key}})
+	client, _, err := websocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(gateway.URL, "http")+"/v1/responses", http.Header{"Authorization": []string{"Bearer sk-responseswstoken"}})
 	require.NoError(t, err)
 	fixture.client = client
 	t.Cleanup(func() { fixture.closeAndWait(t) })
@@ -457,7 +457,7 @@ func TestResponsesInterruptedStreamHealth(t *testing.T) {
 				defer cancel()
 				request, err := http.NewRequestWithContext(ctx, http.MethodPost, fixture.gatewayURL+"/v1/responses", strings.NewReader(`{"model":"ws-billing","input":"hello","stream":true}`))
 				require.NoError(t, err)
-				request.Header.Set("Authorization", "Bearer sk-"+fixture.token.Key)
+				request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 				request.Header.Set("Content-Type", "application/json")
 				response, err := (&http.Client{Timeout: 3 * time.Second}).Do(request)
 				require.NoError(t, err)
@@ -697,7 +697,7 @@ func TestResponsesWebSocketDialsNativeResponsesChannelTypes(t *testing.T) {
 
 			request, err := http.NewRequest(http.MethodPost, fixture.gatewayURL+"/v1/responses", strings.NewReader(`{"model":"ws-billing","input":"hi","stream":true}`))
 			require.NoError(t, err)
-			request.Header.Set("Authorization", "Bearer sk-"+fixture.token.Key)
+			request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 			request.Header.Set("Content-Type", "application/json")
 			response, err := (&http.Client{Timeout: 3 * time.Second}).Do(request)
 			require.NoError(t, err)
@@ -931,7 +931,7 @@ func TestResponsesStreamOutcomesPreserveAccounting(t *testing.T) {
 				if transport == "http-sse" {
 					request, err := http.NewRequest(http.MethodPost, fixture.gatewayURL+"/v1/responses", strings.NewReader(`{"model":"ws-billing","input":"hi","stream":true,"max_output_tokens":1}`))
 					require.NoError(t, err)
-					request.Header.Set("Authorization", "Bearer sk-"+fixture.token.Key)
+					request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 					request.Header.Set("Content-Type", "application/json")
 					response, err := (&http.Client{Timeout: 3 * time.Second}).Do(request)
 					require.NoError(t, err)
@@ -1023,7 +1023,7 @@ func TestResponsesHTTPHealthCountsFinalResult(t *testing.T) {
 			require.NoError(t, model.DB.Model(&model.Channel{}).Where("name = ?", "responses-ws-upstream").Update("base_url", upstream.URL).Error)
 			request, err := http.NewRequest(http.MethodPost, fixture.gatewayURL+"/v1/responses", strings.NewReader(`{"model":"ws-billing","input":"hello"}`))
 			require.NoError(t, err)
-			request.Header.Set("Authorization", "Bearer sk-"+fixture.token.Key)
+			request.Header.Set("Authorization", "Bearer sk-responseswstoken")
 			request.Header.Set("Content-Type", "application/json")
 			response, err := http.DefaultClient.Do(request)
 			require.NoError(t, err)

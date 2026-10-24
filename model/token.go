@@ -15,6 +15,7 @@ type Token struct {
 	Id                 int            `json:"id"`
 	UserId             int            `json:"user_id" gorm:"index"`
 	Key                string         `json:"key" gorm:"type:varchar(128);uniqueIndex"`
+	KeyHint            string         `json:"key_hint" gorm:"type:varchar(32);default:''"` // TOKEN: display hint; Key holds the hash
 	Status             int            `json:"status" gorm:"default:1"`
 	Name               string         `json:"name" gorm:"index" `
 	CreatedTime        int64          `json:"created_time" gorm:"bigint"`
@@ -78,6 +79,9 @@ func (token *Token) GetFullKey() string {
 }
 
 func (token *Token) GetMaskedKey() string {
+	if IsHashedTokenKey(token.Key) { // TOKEN: never mask the hash
+		return token.KeyHint
+	}
 	return MaskTokenKey(token.Key)
 }
 
@@ -198,7 +202,8 @@ func SearchUserTokens(userId int, keyword string, token string, offset int, limi
 		if err != nil {
 			return nil, 0, err
 		}
-		baseQuery = baseQuery.Where(commonKeyCol+" LIKE ? ESCAPE '!'", tokenPattern)
+		// TOKEN: keys are hashed; match a full key exactly or the display hint.
+		baseQuery = baseQuery.Where("("+commonKeyCol+" = ? OR key_hint LIKE ? ESCAPE '!')", HashTokenKey(token), tokenPattern)
 	}
 
 	// 先查匹配总数（用于分页，受 maxTokens 上限保护，避免全表 COUNT）

@@ -15,6 +15,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/service/authz"
+	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/glebarez/sqlite"
 	"github.com/golang-jwt/jwt/v5"
@@ -509,4 +510,38 @@ func TestApplyWebSocketSubprotocolAuthorizationReadsRepeatedHeaders(t *testing.T
 
 	assert.True(t, applyWebSocketSubprotocolAuthorization(header))
 	assert.Equal(t, "Bearer sk-later-field", header.Get("Authorization"))
+}
+
+// TOKEN: mandatory admin MFA gate (middleware/token_admin_mfa.go).
+func TestAdminMFAGate(t *testing.T) {
+	setupDashboardAuthMiddlewareTest(t)
+	gin.SetMode(gin.TestMode)
+	require.NoError(t, model.DB.AutoMigrate(&model.TwoFA{}, &model.PasskeyCredential{}))
+	security := operation_setting.GetTokenSecuritySetting()
+	saved := *security
+	t.Cleanup(func() { *security = saved })
+
+	adminToken := "middleware-mfa-admin-token"
+	admin := createMiddlewarePATUser(t, "mfa-admin", adminToken)
+	require.NoError(t, model.DB.Model(admin).Update("role", common.RoleAdminUser).Error)
+	userToken := "middleware-mfa-user-token"
+	createMiddlewarePATUser(t, "mfa-user", userToken)
+
+	ok := func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"id": c.GetInt("id")}) }
+	router := gin.New()
+	router.GET("/api/user/self", UserAuth(), ok) // enrolment allowlist
+	router.GET("/api/models", UserAuth(), ok)    // any other route
+
+	security.RequireAdminMFA = false
+	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/models", adminToken).Code, "off: upstream behavior")
+
+	security.RequireAdminMFA = true
+	blocked := middlewareBearerRequest(router, "/api/models", adminToken)
+	assert.Equal(t, http.StatusForbidden, blocked.Code)
+	assert.Contains(t, blocked.Body.String(), `"code":"`+MFAEnrollmentRequiredCode+`"`)
+	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/user/self", adminToken).Code, "enrolment routes stay open")
+	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/models", userToken).Code, "common users are not affected")
+
+	require.NoError(t, model.DB.Create(&model.TwoFA{UserId: admin.Id, Secret: "enrolled", IsEnabled: true}).Error)
+	assert.Equal(t, http.StatusOK, middlewareBearerRequest(router, "/api/models", adminToken).Code, "enrolled admin passes")
 }

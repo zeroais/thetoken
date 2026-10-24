@@ -55,7 +55,7 @@ func testTokenKeyMigrationNonPostgreSQL(t *testing.T, db *gorm.DB) {
 	}
 
 	var preserved Token
-	require.NoError(t, tableDB.Where(&Token{Key: "preserved-key"}).First(&preserved).Error)
+	require.NoError(t, tableDB.Where(&Token{Key: HashTokenKey("preserved-key")}).First(&preserved).Error)
 	assert.Equal(t, 1, preserved.UserId)
 	expectedIndex := db.NamingStrategy.IndexName(tableName, "key")
 	assert.True(t, db.Migrator().HasIndex(tableName, expectedIndex))

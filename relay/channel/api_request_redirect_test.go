@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service"
@@ -85,4 +86,54 @@ func TestDoRequestReturnsUpstreamRedirectWithoutFollowing(t *testing.T) {
 	}
 
 	assert.Equal(t, originalRedirectPolicy, reflect.ValueOf(sharedClient.CheckRedirect).Pointer(), "the cached client must not be mutated")
+}
+
+// TOKEN: a streaming request whose provider sends no response headers fails
+// after TOKEN_STREAM_HEADER_TIMEOUT so the relay can retry it; once headers
+// arrive, a slow stream is read to the end.
+func TestStreamingRequestGivesUpOnAProviderThatSendsNoHeaders(t *testing.T) {
+	service.InitHttpClient()
+	gin.SetMode(gin.TestMode)
+	previous := tokenStreamHeaderTimeout
+	tokenStreamHeaderTimeout = 200 * time.Millisecond
+	t.Cleanup(func() { tokenStreamHeaderTimeout = previous })
+
+	release := make(chan struct{})
+	silent := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { <-release }))
+	defer silent.Close()
+	defer close(release)
+	slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		time.Sleep(400 * time.Millisecond) // longer than the header timeout
+		_, _ = io.WriteString(w, "data: [DONE]\n\n")
+	}))
+	defer slow.Close()
+
+	send := func(url string, stream bool) (*http.Response, error, time.Duration) {
+		ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte("{}")))
+		require.NoError(t, err)
+		info := &relaycommon.RelayInfo{IsStream: stream, DisablePing: true, ChannelMeta: &relaycommon.ChannelMeta{}}
+		start := time.Now()
+		resp, err := doRequest(ctx, req, info)
+		return resp, err, time.Since(start)
+	}
+
+	_, err, elapsed := send(silent.URL, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "do request failed")
+	assert.Less(t, elapsed, 2*time.Second)
+
+	resp, err, _ := send(slow.URL, true)
+	require.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	require.NoError(t, resp.Body.Close())
+	assert.Equal(t, "data: [DONE]\n\n", string(body), "the stream is not limited after the headers")
+
+	resp, err, _ = send(slow.URL, false)
+	require.NoError(t, err, "non-streaming requests keep the global header timeout")
+	_ = resp.Body.Close()
 }

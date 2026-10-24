@@ -315,7 +315,9 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
     <>
       <ul
         aria-label={t('Account Bindings')}
-        className='grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3'
+        // TOKEN: cards share the row and a lone card spans it, so "Email ·
+        // Bound · address" is not truncated when few bindings are enabled.
+        className='grid grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]'
       >
         {bindings.map((binding) => {
           let actionLabel = t('Bind')
@@ -350,7 +352,10 @@ export function AccountBindings({ profile, onUpdate }: AccountBindingsProps) {
                       />
                     )}
                   </div>
-                  <p className='text-muted-foreground truncate text-xs'>
+                  <p
+                    className='text-muted-foreground truncate text-xs'
+                    title={binding.value || undefined}
+                  >
                     {binding.value || t('Not bound')}
                   </p>
                 </div>

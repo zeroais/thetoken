@@ -117,6 +117,9 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 		return
 	}
+	if newAPIError = tokenRejectUnsupportedTools(c, request); newAPIError != nil { // TOKEN: token_relay_tools.go
+		return
+	}
 
 	relayInfo, err := relaycommon.GenRelayInfo(c, relayFormat, request, ws)
 	if err != nil {

@@ -45,6 +45,10 @@ const serverErrorMessageKeys = {
   OAUTH_ACCOUNT_MISMATCH:
     'The OAuth account does not match the account linked to your profile.',
   TWOFA_CODE_INVALID: 'The authenticator code is incorrect.',
+  MFA_ENROLLMENT_REQUIRED:
+    'Admin accounts must use an authenticator app or a passkey. Set one up below to unlock the console.',
+  MFA_LAST_FACTOR:
+    'Admin accounts must keep a second factor. Add a passkey or authenticator app before removing this one.',
   TWOFA_ALREADY_ENABLED: 'Two-factor authentication is already enabled.',
   TWOFA_NOT_ENABLED: 'Two-factor authentication is not enabled.',
   PASSKEY_NOT_FOUND: 'No Passkey is registered.',

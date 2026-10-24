@@ -25,12 +25,15 @@ import en from './locales/en.json'
 import fr from './locales/fr.json'
 import ja from './locales/ja.json'
 import ru from './locales/ru.json'
+// TOKEN: English wording for a hosted, USD-billed service ("credit", "spending
+// limit", "routing group") on top of upstream's self-hosting vocabulary.
+import tokenEn from './locales/token-en.json'
 import vi from './locales/vi.json'
 import zhTW from './locales/zh-TW.json'
 import zhCN from './locales/zh.json'
 
 export const resources = {
-  en,
+  en: { translation: { ...en.translation, ...tokenEn } },
   zhCN,
   fr,
   ru,

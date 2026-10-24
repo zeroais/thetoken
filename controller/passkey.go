@@ -223,6 +223,9 @@ func PasskeyDelete(c *gin.Context) {
 	if middleware.RequireSecurityProof(c, service.VerificationOperation{Scope: service.VerificationScopePasskeyDelete}) == nil {
 		return
 	}
+	if refuseRemovingLastAdminFactor(c, user.Id, "passkey") { // TOKEN: keep an admin factor
+		return
+	}
 
 	identity, ok := middleware.GetStepUpIdentity(c)
 	if !ok {

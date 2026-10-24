@@ -271,6 +271,30 @@ describe('create access token dialog', () => {
     )
   })
 
+  it('marks exactly one expiration as selected and moves it with the keyboard', async () => {
+    renderCard()
+    const user = userEvent.setup()
+    const dialog = await openCreate(user)
+    const group = within(dialog).getByRole('group', { name: 'Expiration' })
+    const option = (name: string) => within(group).getByRole('button', { name })
+    const pressed = () =>
+      within(group)
+        .getAllByRole('button')
+        .filter((button) => button.getAttribute('aria-pressed') === 'true')
+        .map((button) => button.textContent)
+
+    expect(pressed()).toEqual(['30 days'])
+    expect(option('30 days').className).toContain('aria-pressed:border-primary')
+
+    await user.click(option('90 days'))
+    expect(pressed()).toEqual(['90 days'])
+
+    option('90 days').focus()
+    await user.keyboard('{ArrowRight}{Enter}')
+    expect(pressed()).toEqual(['180 days'])
+    expect(option('180 days')).toHaveFocus()
+  })
+
   it('warns about tokens that never expire and shows the plaintext only once', async () => {
     const token = 'nap_one-time-private-token'
     vi.mocked(api.post).mockImplementation(async (url, data) => {

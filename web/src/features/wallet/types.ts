@@ -39,6 +39,8 @@ export type PaymentResponse = ApiResponse<Record<string, unknown>> & {
   url?: string
 }
 export type StripePaymentResponse = ApiResponse<{ pay_link: string }>
+/** TOKEN: Moyasar hosted invoice page */
+export type MoyasarPaymentResponse = ApiResponse<{ pay_link: string }>
 export type AffiliateCodeResponse = ApiResponse<string>
 export type AffiliateTransferResponse = ApiResponse
 export type CreemPaymentResponse = ApiResponse<{ checkout_url: string }>
@@ -136,6 +138,12 @@ export interface TopupInfo {
   discount: Record<number, number>
   /** Optional topup link for purchasing codes */
   topup_link?: string
+  /** TOKEN: credit purchase fee rate added at checkout (e.g. 0.055) */
+  topup_fee_rate?: number
+  /** TOKEN: whether Moyasar (SAR) topup is enabled */
+  enable_moyasar_topup?: boolean
+  /** TOKEN: minimum topup amount (USD credit) for Moyasar */
+  moyasar_min_topup?: number
   /** Whether Creem topup is enabled */
   enable_creem_topup?: boolean
   /** Available Creem products */

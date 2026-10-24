@@ -101,7 +101,7 @@ func getWaffoPayMoney(amount float64, group string) float64 {
 			discount = ds
 		}
 	}
-	return amount * setting.WaffoUnitPrice * topupGroupRatio * discount
+	return operation_setting.WithTopupFee(amount * setting.WaffoUnitPrice * topupGroupRatio * discount) // TOKEN: credit purchase fee
 }
 
 type WaffoPayRequest struct {

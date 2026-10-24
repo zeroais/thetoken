@@ -151,7 +151,9 @@ export function AccessTokenCreateDialog(props: AccessTokenCreateDialogProps) {
                     <ToggleGroupItem
                       key={option.value}
                       value={option.value}
-                      className='w-full'
+                      // TOKEN: the shared pressed style matches hover; make
+                      // the chosen expiry visible without relying on focus.
+                      className='aria-pressed:border-primary aria-pressed:bg-primary/10 aria-pressed:text-primary w-full aria-pressed:font-semibold'
                     >
                       {t(option.labelKey)}
                     </ToggleGroupItem>

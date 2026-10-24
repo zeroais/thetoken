@@ -20,6 +20,7 @@ import type { TFunction } from 'i18next'
 import { z } from 'zod'
 
 import { parseQuotaFromDollars, quotaUnitsToDollars } from '@/lib/format'
+import { TOKEN_BRAND } from '@/lib/token-brand'
 
 import { DEFAULT_GROUP } from '../constants'
 import type { ApiKey, ApiKeyFormData } from '../types'
@@ -110,7 +111,7 @@ export const API_KEY_FORM_DEFAULT_VALUES: ApiKeyFormValues = {
   unlimited_quota: true,
   model_limits: [],
   allow_ips: '',
-  group: DEFAULT_GROUP,
+  group: TOKEN_BRAND.defaultKeyGroup, // TOKEN: customers need not pick a group
   auto_groups_mode: 'inherit',
   auto_groups: [],
   cross_group_retry: true,
@@ -122,7 +123,7 @@ export function getApiKeyFormDefaultValues(
 ): ApiKeyFormValues {
   return {
     ...API_KEY_FORM_DEFAULT_VALUES,
-    group: defaultUseAutoGroup ? 'auto' : DEFAULT_GROUP,
+    group: defaultUseAutoGroup ? 'auto' : TOKEN_BRAND.defaultKeyGroup, // TOKEN
     auto_groups_mode: 'inherit',
     auto_groups: [],
     cross_group_retry: defaultUseAutoGroup,

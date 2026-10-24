@@ -48,7 +48,8 @@ import {
 } from '@/components/page-transition'
 import { Button } from '@/components/ui/button'
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
-import { fetchTokenKey, getApiKeys } from '@/features/keys/api'
+import { getApiKeys } from '@/features/keys/api'
+import { getRememberedTokenKey } from '@/features/keys/lib/token-key-store'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
@@ -56,6 +57,7 @@ import { handleServerError } from '@/lib/handle-server-error'
 import { MOTION_TRANSITION } from '@/lib/motion'
 import { ROLE } from '@/lib/roles'
 import { requireServerSuccess } from '@/lib/server-error-message'
+import { tokenApiOrigin, tokenSampleModel } from '@/lib/token-brand'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -142,7 +144,7 @@ function saveSetupGuideExpanded(expanded: boolean): void {
 
 function getCurrentOrigin(): string {
   if (typeof window === 'undefined') return ''
-  return window.location.origin
+  return tokenApiOrigin(window.location.origin) // TOKEN: api.<domain>
 }
 
 function normalizeEndpoint(sourceUrl?: string): string {
@@ -293,25 +295,27 @@ function RequestPreview(props: {
   })
   const previewLines = previewCurl.split('\n')
   const handleCopyRequest = async () => {
-    if (!props.example.keyId || isCopying) return
+    if (isCopying) return
 
     setIsCopying(true)
     try {
-      const result = await fetchTokenKey(props.example.keyId)
-      const key = result.success && result.data?.key ? result.data.key : ''
-      if (!key) {
-        handleServerError(result, t('Failed to copy to clipboard'))
-        return
-      }
-
+      // TOKEN: keys are stored hashed; use a key issued in this tab, or a
+      // placeholder the user replaces with their saved key.
+      const known = props.example.keyId
+        ? getRememberedTokenKey(props.example.keyId)
+        : undefined
       const realCurl = buildCurlCommand({
         endpoint: props.example.endpoint,
-        apiKey: `sk-${key}`,
+        apiKey: known ?? 'sk-YOUR_API_KEY',
         model: props.example.model,
       })
       const copied = await copyToClipboard(realCurl)
       if (copied) {
-        toast.success(t('Copied to clipboard'))
+        toast.success(
+          known
+            ? t('Copied to clipboard')
+            : t('Copied. Replace sk-YOUR_API_KEY with your API key.')
+        )
       } else {
         toast.error(t('Failed to copy to clipboard'))
       }
@@ -567,8 +571,15 @@ export function OverviewDashboard() {
     [isAdmin, quickActions]
   )
 
-  const heroSignals = useMemo<HeroSignal[]>(
-    () => [
+  const heroSignals = useMemo<HeroSignal[]>(() => {
+    // TOKEN: an empty model list is not "loading"
+    let modelSignal = t('No models available')
+    if (modelsQuery.isPending) {
+      modelSignal = t('Loading')
+    } else if (modelsQuery.data?.length) {
+      modelSignal = tokenSampleModel(modelsQuery.data)
+    }
+    return [
       {
         label: t('Route active'),
         value: apiInfoItems.length > 0 ? t('Online') : t('Current domain'),
@@ -583,17 +594,22 @@ export function OverviewDashboard() {
       },
       {
         label: t('Model selected'),
-        value: modelsQuery.data?.[0] ?? t('Loading'),
+        value: modelSignal,
         icon: Timer,
         tone: 'chart-4',
       },
-    ],
-    [apiInfoItems.length, modelsQuery.data, preferredKey, t]
-  )
+    ]
+  }, [
+    apiInfoItems.length,
+    modelsQuery.data,
+    modelsQuery.isPending,
+    preferredKey,
+    t,
+  ])
 
   const requestExample = useMemo<RequestExample>(() => {
     const endpoint = normalizeEndpoint(apiInfoItems[0]?.url)
-    const model = modelsQuery.data?.[0] ?? 'gpt-4o-mini'
+    const model = tokenSampleModel(modelsQuery.data) // TOKEN
     const keyName = preferredKey?.name ?? t('No API key yet')
     const ready = Boolean(preferredKey?.id && model)
 

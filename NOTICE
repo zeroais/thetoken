@@ -56,3 +56,23 @@ and other third-party components. Electron and Chromium third-party license
 notices must remain available with desktop installers and installed apps.
 
 ==== End of Notices ====
+
+==== Modifications by TOKEN ====
+
+This is a modified version of new-api, based on new-api tag v1.0.0-rc.42
+(released 2026-10-08), changed by ZEROAI Establishment for the TOKEN service
+(https://thetoken.dev). The modifications are licensed under the GNU Affero
+General Public License v3.0, like the rest of the project.
+
+As required by AGPLv3 section 5(a) and section 7(c), every file added or
+changed relative to that tag is listed, with the date of its latest change, in
+TOKEN_MODIFICATIONS.md. The attribution and link required above are preserved
+in the TOKEN console footer and About page.
+
+==== Additional Terms under AGPLv3 Section 7(e) ====
+
+Pursuant to Section 7(e) of the GNU Affero General Public License version 3,
+this license does not grant any rights under trademark law for use of the
+name "TOKEN", the TOKEN logo, or any trade names, trademarks or service marks
+of ZEROAI Establishment, including "ZEROAI". This term does not limit the
+attribution to New API required above.

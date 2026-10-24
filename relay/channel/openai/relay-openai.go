@@ -121,13 +121,15 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	var secondLastStreamData string // 保留倒数第二个stream data；部分兼容网关把完整usage放在倒数第二个事件
 	seenStreamToolCalls := make(map[string]struct{})
 	var streamFunctionCallNames []string
+	lastSent := false // TOKEN: lastStreamData already forwarded (see below)
 
 	helper.StreamScannerHandler(c, resp, info, func(data string, sr *helper.StreamResult) {
-		if lastStreamData != "" {
+		if lastStreamData != "" && !lastSent {
 			if err := HandleStreamFormat(c, info, lastStreamData, info.ChannelSetting.ForceFormat, info.ChannelSetting.ThinkingToContent); err != nil {
 				common.SysLog("error handling stream format: " + err.Error())
 				sr.Error(err)
 			}
+			lastSent = true
 		}
 		if len(data) > 0 {
 			if lastStreamData != "" {
@@ -135,6 +137,18 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 			}
 
 			lastStreamData = data
+			lastSent = false
+			// TOKEN: forward OpenAI-format events at once instead of one event
+			// later; only an event carrying usage may need the final-event
+			// handling below, so only that one waits. Saves one inter-token
+			// interval on time to first token.
+			if info.RelayFormat == types.RelayFormatOpenAI && !strings.Contains(data, `"usage"`) {
+				if err := HandleStreamFormat(c, info, data, info.ChannelSetting.ForceFormat, info.ChannelSetting.ThinkingToContent); err != nil {
+					common.SysLog("error handling stream format: " + err.Error())
+					sr.Error(err)
+				}
+				lastSent = true
+			}
 			observeStreamChoices(info, data, seenStreamToolCalls, &streamFunctionCallNames)
 			if err := processTokenData(info, data, &responseTextBuilder, &toolCount); err != nil {
 				logger.LogError(c, "error processing stream token data: "+err.Error())
@@ -176,7 +190,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	}
 
 	if info.RelayFormat == types.RelayFormatOpenAI {
-		if shouldSendLastResp {
+		if shouldSendLastResp && !lastSent { // TOKEN: not when already forwarded
 			_ = sendStreamData(c, info, lastStreamData, info.ChannelSetting.ForceFormat, info.ChannelSetting.ThinkingToContent)
 		}
 	}
@@ -320,6 +334,7 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 		}
 		simpleResponse.Usage = *fallbackUsage
 		usageModified = true
+		common.SetContextKey(c, constant.ContextKeyLocalCountTokens, true) // TOKEN: flag estimated usage, as streams do
 	}
 
 	applyUsagePostProcessing(info, &simpleResponse.Usage, responseBody)

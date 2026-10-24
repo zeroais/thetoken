@@ -212,7 +212,7 @@ func InitDB() (err error) {
 		sqlDB.SetMaxOpenConns(common.GetEnvOrDefault("SQL_MAX_OPEN_CONNS", 1000))
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
 
-		if !common.IsMasterNode {
+		if !common.TokenMigrates() { // TOKEN: master unless TOKEN_SKIP_MIGRATIONS
 			// Only the master node migrates. A node that cannot read the deadline
 			// keeps rejecting legacy access tokens instead of refusing to start.
 			if err := EnsureLegacyAccessTokenRetireAt(common.GetTimestamp()); err != nil {
@@ -237,7 +237,7 @@ func InitLogDB() (err error) {
 		LOG_DB = DB
 		common.SetLogDatabaseType(common.MainDatabaseType())
 		initCol()
-		if common.IsMasterNode {
+		if common.TokenMigrates() { // TOKEN
 			return MigrateAuditLogs()
 		}
 		return
@@ -264,7 +264,7 @@ func InitLogDB() (err error) {
 		sqlDB.SetMaxOpenConns(common.GetEnvOrDefault("SQL_MAX_OPEN_CONNS", 1000))
 		sqlDB.SetConnMaxLifetime(time.Second * time.Duration(common.GetEnvOrDefault("SQL_MAX_LIFETIME", 60)))
 
-		if !common.IsMasterNode {
+		if !common.TokenMigrates() { // TOKEN
 			return nil
 		}
 		common.SysLog("database migration started")
@@ -378,6 +378,18 @@ func migrateDB() error {
 		&UserAccessToken{},
 	)
 	if err != nil {
+		return err
+	}
+	if err := migrateTokenKeyHashes(); err != nil { // TOKEN: store API keys hashed
+		return err
+	}
+	if err := DB.AutoMigrate(&TokenPaymentReversal{}); err != nil { // TOKEN: durable payment reversals
+		return err
+	}
+	if err := migrateTokenStarterGrants(); err != nil { // TOKEN: starter credit once per mailbox
+		return err
+	}
+	if err := DB.AutoMigrate(&TokenPerfHistogram{}); err != nil { // TOKEN: public latency percentiles
 		return err
 	}
 	if err := InitializeUserAuthVersions(); err != nil {

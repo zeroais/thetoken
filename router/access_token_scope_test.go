@@ -57,6 +57,8 @@ var accessTokenExemptRoutes = []string{
 
 	// Payment callbacks.
 	"POST /api/stripe/webhook",
+	"POST /api/moyasar/webhook",  // TOKEN
+	"POST /api/moyasar/callback", // TOKEN
 	"POST /api/creem/webhook",
 	"POST /api/waffo/webhook",
 	"POST /api/waffo-pancake/webhook/:env",

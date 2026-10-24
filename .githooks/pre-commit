@@ -1,0 +1,20 @@
+#!/bin/sh
+# TOKEN: block commits that contain secrets. Enable once per clone:
+#   git config core.hooksPath .githooks
+# Uses a local gitleaks binary if present, otherwise the pinned Docker image.
+set -e
+GITLEAKS_IMAGE="ghcr.io/gitleaks/gitleaks:v8.28.0"
+repo_root=$(git rev-parse --show-toplevel)
+
+if command -v gitleaks >/dev/null 2>&1; then
+  exec gitleaks git --pre-commit --staged --redact --no-banner "$repo_root"
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "pre-commit: neither gitleaks nor docker is installed; refusing to commit unscanned changes." >&2
+  echo "Install gitleaks (brew install gitleaks) or start Docker." >&2
+  exit 1
+fi
+
+exec docker run --rm -v "$repo_root:/repo" --entrypoint sh "$GITLEAKS_IMAGE" -c \
+  'git config --global --add safe.directory /repo && gitleaks git --pre-commit --staged --redact --no-banner /repo'

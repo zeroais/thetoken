@@ -394,8 +394,8 @@ func runTokenMigrationCompatibilityTest(t *testing.T, db *gorm.DB, dialect strin
 	if err := db.First(&fetched, "id = ?", inserted.Id).Error; err != nil {
 		t.Fatalf("failed to fetch long token after migration: %v", err)
 	}
-	if fetched.Key != longKey {
-		t.Fatalf("expected long token key %q, got %q", longKey, fetched.Key)
+	if fetched.Key != model.HashTokenKey(longKey) { // TOKEN: keys are stored hashed
+		t.Fatalf("expected hashed long token key, got %q", fetched.Key)
 	}
 }
 
@@ -551,37 +551,28 @@ func TestUpdateTokenMasksKeyInResponse(t *testing.T) {
 	}
 }
 
-func TestGetTokenKeyRequiresOwnershipAndReturnsFullKey(t *testing.T) {
+// TOKEN: keys are stored hashed and shown once; the reveal endpoint never
+// returns a key, for the owner or anyone else.
+func TestGetTokenKeyIsRetired(t *testing.T) {
 	db := setupTokenControllerTestDB(t)
 	token := seedToken(t, db, 1, "owned-token", "owner1234token5678")
-
-	authorizedCtx, authorizedRecorder := newAuthenticatedContext(t, http.MethodPost, "/api/token/"+strconv.Itoa(token.Id)+"/key", nil, 1)
-	authorizedCtx.Params = gin.Params{{Key: "id", Value: strconv.Itoa(token.Id)}}
-	GetTokenKey(authorizedCtx)
-
-	authorizedResponse := decodeAPIResponse(t, authorizedRecorder)
-	if !authorizedResponse.Success {
-		t.Fatalf("expected authorized key fetch to succeed, got message: %s", authorizedResponse.Message)
+	if token.Key != model.HashTokenKey("owner1234token5678") {
+		t.Fatalf("expected the key to be stored hashed, got %q", token.Key)
 	}
 
-	var keyData tokenKeyResponse
-	if err := common.Unmarshal(authorizedResponse.Data, &keyData); err != nil {
-		t.Fatalf("failed to decode token key response: %v", err)
-	}
-	if keyData.Key != token.GetFullKey() {
-		t.Fatalf("expected full key %q, got %q", token.GetFullKey(), keyData.Key)
-	}
+	for _, userID := range []int{1, 2} {
+		ctx, recorder := newAuthenticatedContext(t, http.MethodPost, "/api/token/"+strconv.Itoa(token.Id)+"/key", nil, userID)
+		ctx.Params = gin.Params{{Key: "id", Value: strconv.Itoa(token.Id)}}
+		GetTokenKey(ctx)
 
-	unauthorizedCtx, unauthorizedRecorder := newAuthenticatedContext(t, http.MethodPost, "/api/token/"+strconv.Itoa(token.Id)+"/key", nil, 2)
-	unauthorizedCtx.Params = gin.Params{{Key: "id", Value: strconv.Itoa(token.Id)}}
-	GetTokenKey(unauthorizedCtx)
-
-	unauthorizedResponse := decodeAPIResponse(t, unauthorizedRecorder)
-	if unauthorizedResponse.Success {
-		t.Fatalf("expected unauthorized key fetch to fail")
-	}
-	if strings.Contains(unauthorizedRecorder.Body.String(), token.Key) {
-		t.Fatalf("unauthorized key response leaked raw token key: %s", unauthorizedRecorder.Body.String())
+		response := decodeAPIResponse(t, recorder)
+		if response.Success {
+			t.Fatalf("expected key reveal to fail for user %d", userID)
+		}
+		body := recorder.Body.String()
+		if strings.Contains(body, "owner1234token5678") || strings.Contains(body, token.Key) {
+			t.Fatalf("key reveal leaked the key or its hash: %s", body)
+		}
 	}
 }
 
@@ -659,6 +650,7 @@ func verifyAPITokenAudit(t *testing.T) {
 	tokenRoutes.DELETE("/:id", DeleteToken)
 	tokenRoutes.POST("/batch", DeleteTokenBatch)
 	tokenRoutes.POST("/batch/keys", GetTokenKeysBatch)
+	tokenRoutes.POST("/:id/rotate", RotateTokenKey)
 	tokenRoutes.POST("/:id/key", func(c *gin.Context) {
 		if c.GetHeader("X-Test-Limit") != "" {
 			c.AbortWithStatusJSON(429, gin.H{"success": false})
@@ -695,14 +687,17 @@ func verifyAPITokenAudit(t *testing.T) {
 		{name: "delete", method: "DELETE", path: "/$id", action: "token.delete", success: true, params: `{"id":$id,"name":"owned"}`},
 		{name: "foreign delete", method: "DELETE", path: "/$other", action: "token.delete", params: `{"id":$other}`},
 		{name: "missing delete", method: "DELETE", path: "/999999", action: "token.delete", params: `{"id":999999}`},
-		{name: "key view", method: "POST", path: "/$id/key", action: "token.key_view", success: true, params: `{"id":$id,"name":"owned"}`},
-		{name: "PAT key view", method: "POST", path: "/$id/key", action: "token.key_view", success: true, params: `{"id":$id,"name":"owned"}`, usePAT: true},
+		// TOKEN: keys are stored hashed; reveal is retired (audited, never succeeds).
+		{name: "key view", method: "POST", path: "/$id/key", action: "token.key_view", params: `{"id":$id,"name":"owned"}`},
+		{name: "PAT key view", method: "POST", path: "/$id/key", action: "token.key_view", params: `{"id":$id,"name":"owned"}`, usePAT: true},
+		{name: "rotate", method: "POST", path: "/$id/rotate", action: "token.key_rotate", success: true, params: `{"id":$id}`},
+		{name: "foreign rotate", method: "POST", path: "/$other/rotate", action: "token.key_rotate", params: `{"id":$other}`},
 		{name: "foreign key view", method: "POST", path: "/$other/key", action: "token.key_view", params: `{"id":$other}`},
 		{name: "rate limited key view", method: "POST", path: "/$id/key", action: "token.key_view", params: `{"id":$id}`, rateLimit: true},
 		{name: "batch delete partial and duplicate", method: "POST", path: "/batch", body: `{"ids":[$id,$id,$other,999999]}`, action: "token.delete_batch", success: true, params: `{"requested_ids":[$id,$id,$other,999999],"total":4,"count":1}`},
 		{name: "empty batch delete", method: "POST", path: "/batch", body: `{"ids":[]}`, action: "token.delete_batch", params: `{"requested_ids":[],"total":0}`},
-		{name: "batch keys partial and duplicate", method: "POST", path: "/batch/keys", body: `{"ids":[$id,$id,$other,999999]}`, action: "token.key_view_batch", success: true, params: `{"requested_ids":[$id,$id,$other,999999],"total":4,"count":1,"returned_ids":[$id]}`},
-		{name: "batch keys no matches", method: "POST", path: "/batch/keys", body: `{"ids":[$other,999999]}`, action: "token.key_view_batch", success: true, params: `{"requested_ids":[$other,999999],"total":2,"count":0,"returned_ids":[]}`},
+		{name: "batch keys partial and duplicate", method: "POST", path: "/batch/keys", body: `{"ids":[$id,$id,$other,999999]}`, action: "token.key_view_batch", params: `{"requested_ids":[$id,$id,$other,999999],"total":4}`},
+		{name: "batch keys no matches", method: "POST", path: "/batch/keys", body: `{"ids":[$other,999999]}`, action: "token.key_view_batch", params: `{"requested_ids":[$other,999999],"total":2}`},
 		{name: "empty batch keys", method: "POST", path: "/batch/keys", body: `{"ids":[]}`, action: "token.key_view_batch", params: `{"requested_ids":[],"total":0}`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -811,8 +806,8 @@ func verifyAPITokenAudit(t *testing.T) {
 			for _, secret := range []string{pat, jwt, owned.Key, foreign.Key, foreign.Name, "raw-body-secret", "raw-storage-error-secret", "private-model-configuration", "203.0.113.57", "Authorization"} {
 				assert.NotContains(t, string(encoded), secret)
 			}
-			if tc.action == "token.key_view" && tc.success {
-				assert.Contains(t, response.Body.String(), owned.GetFullKey())
+			if tc.action == "token.key_view" {
+				assert.NotContains(t, response.Body.String(), owned.Key)
 			}
 		})
 	}

@@ -41,9 +41,34 @@ describe('payment amount routing', () => {
         calls.push('pancake')
         return { success: true, data: '4' }
       },
+      moyasar: async () => {
+        calls.push('moyasar')
+        return { success: true, data: '5' }
+      },
     })
 
     expect(amount).toBe(18.75)
     expect(calls).toEqual(['waffo:120'])
+  })
+
+  test('uses the Moyasar amount calculator for SAR invoices', async () => {
+    const calls: string[] = []
+    const noop = async () => {
+      calls.push('other')
+      return { success: true, data: '0' }
+    }
+    const amount = await requestPaymentAmount(10, PAYMENT_TYPES.MOYASAR, {
+      regular: noop,
+      stripe: noop,
+      waffo: noop,
+      waffoPancake: noop,
+      moyasar: async (request) => {
+        calls.push(`moyasar:${request.amount}`)
+        return { success: true, data: '10.55' }
+      },
+    })
+
+    expect(amount).toBe(10.55)
+    expect(calls).toEqual(['moyasar:10'])
   })
 })

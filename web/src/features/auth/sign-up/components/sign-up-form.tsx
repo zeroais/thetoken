@@ -49,6 +49,7 @@ import {
   getAffiliateCode,
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
+import { signInAfterSignUp } from '@/features/auth/lib/token-sign-up-sign-in'
 import { useStatus } from '@/hooks/use-status'
 import { handleServerError } from '@/lib/handle-server-error'
 import { AuthOperationError } from '@/lib/secure-verification'
@@ -108,6 +109,10 @@ export function SignUpForm({
     status?.data?.oauth_register_enabled ??
     true
   const hasWeChatLogin = Boolean(status?.wechat_login)
+  const passwordLoginEncryptionEnabled =
+    (status?.password_login_encryption_enabled ??
+      status?.data?.password_login_encryption_enabled ??
+      false) === true
   const turnstileReady = !isTurnstileEnabled || Boolean(turnstileToken)
 
   const wechatQrCodeUrl = useMemo(() => {
@@ -171,6 +176,19 @@ export function SignUpForm({
       })
 
       if (res?.success) {
+        // TOKEN: sign in right away (features/auth/lib/token-sign-up-sign-in.ts)
+        const signedIn = await signInAfterSignUp(
+          {
+            username: data.username,
+            password: data.password,
+            passwordEncryptionEnabled: passwordLoginEncryptionEnabled,
+          },
+          handleLoginResult
+        )
+        if (signedIn) {
+          toast.success(t('Account created. You are signed in.'))
+          return
+        }
         toast.success(t('Account created! Please sign in'))
         redirectToLogin()
       } else {

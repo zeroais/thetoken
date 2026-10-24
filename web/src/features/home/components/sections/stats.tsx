@@ -97,11 +97,23 @@ interface StatItem {
 export function Stats(_props: StatsProps) {
   const { t } = useTranslation()
 
+  // TOKEN: the catalog size and TOKEN's published commercial policies, not
+  // upstream's integration counts. Update the model count when models are
+  // added or retired.
   const stats: StatItem[] = [
-    { end: 50, suffix: '+', label: t('upstream services integrated') },
-    { end: 100, suffix: '+', label: t('model billing support') },
-    { end: 50, suffix: '+', label: t('compatible API routes') },
-    { end: 10, suffix: '+', label: t('scheduling controls') },
+    { end: 11, suffix: ' models', label: t('on one OpenAI-compatible API') },
+    {
+      end: 5.5,
+      suffix: '%',
+      decimals: 1,
+      label: t('credit purchase fee, shown at checkout'),
+    },
+    { end: 30, suffix: ' days', label: t('notice before a model is retired') },
+    {
+      end: 90,
+      suffix: ' days',
+      label: t('to refund unused credit, minus the fee'),
+    },
   ]
 
   return (

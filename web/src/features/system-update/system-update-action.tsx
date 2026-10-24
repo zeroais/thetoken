@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { ROLE } from '@/lib/roles'
+import { tokenVersionLabel } from '@/lib/token-brand'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -55,7 +56,11 @@ function AdminSystemUpdateAction(props: SystemUpdateActionProps) {
   const [open, setOpen] = useState(false)
   const compact = props.compact ?? true
   const versionPresentation = props.presentation === 'version'
-  const version = update.currentVersion?.trim() || t('Unknown version')
+  const currentVersion = update.currentVersion?.trim()
+  // TOKEN: show the TOKEN release, not New API's base tag (lib/token-brand.ts)
+  const version = currentVersion
+    ? tokenVersionLabel(currentVersion)
+    : t('Unknown version')
   const label = update.shouldNotify
     ? t('Update available')
     : t('Check for updates')

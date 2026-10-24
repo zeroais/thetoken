@@ -33,6 +33,7 @@ import (
 	"github.com/QuantumNous/new-api/service/authz"
 	_ "github.com/QuantumNous/new-api/setting/performance_setting"
 	"github.com/QuantumNous/new-api/setting/ratio_setting"
+	tokenmetrics "github.com/QuantumNous/new-api/tokenops/metrics"
 
 	"github.com/bytedance/gopkg/util/gopool"
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,29 @@ func main() {
 	err := InitResources()
 	if err != nil {
 		common.FatalLog("failed to initialize resources: " + err.Error())
+		return
+	}
+	if common.TokenMigrates() { // TOKEN: after the log database is up (model/token_starter_credit.go)
+		if err := model.TokenReleaseStaffStarterGrants(); err != nil {
+			common.FatalLog("TOKEN starter grant repair failed: " + err.Error())
+		}
+	}
+	if common.TokenRetentionOnly { // TOKEN: retention job (common/token_deploy.go)
+		results, err := model.TokenEnforceRetention(time.Now(), 5000, false)
+		for _, r := range results {
+			common.SysLog(fmt.Sprintf("TOKEN retention: log type %d: %d rows older than %d days, deleted %d", r.LogType, r.Older, r.Days, r.Deleted))
+		}
+		if err != nil {
+			common.FatalLog("TOKEN retention failed: " + err.Error())
+		}
+		common.SysLog("TOKEN: retention complete; exiting (TOKEN_RETENTION_ONLY)")
+		return
+	}
+	if common.TokenMigrateOnly { // TOKEN: migration job (common/token_deploy.go)
+		if !common.IsMasterNode {
+			common.FatalLog("TOKEN_MIGRATE_ONLY needs a master node (unset NODE_TYPE)")
+		}
+		common.SysLog("TOKEN: migrations complete; exiting (TOKEN_MIGRATE_ONLY)")
 		return
 	}
 
@@ -194,6 +218,8 @@ func main() {
 	}))
 	// This will cause SSE not to work!!!
 	//server.Use(gzip.Gzip(gzip.DefaultCompression))
+	server.Use(middleware.TokenSecurityHeaders())                     // TOKEN: security headers
+	server.Use(tokenmetrics.Install(os.Getenv("TOKEN_METRICS_ADDR"))) // TOKEN: Prometheus metrics (internal port)
 	server.Use(middleware.RequestId())
 	server.Use(middleware.Version())
 	server.Use(middleware.I18n())
@@ -230,6 +256,9 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	sig := <-quit
 	common.SysLog(fmt.Sprintf("received signal: %v, shutting down...", sig))
+	// TOKEN: Cloud Run kills an instance 10 s after SIGTERM, before long
+	// streams finish, so flush performance data now and again after them.
+	perfmetrics.FlushAll()
 
 	// SSE streams may run for minutes; give them time to finish before forced exit
 	shutdownTimeout := time.Duration(common.GetEnvOrDefault("SHUTDOWN_TIMEOUT_SECONDS", 120)) * time.Second
@@ -238,6 +267,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		common.SysError(fmt.Sprintf("server forced to shutdown: %v", err))
 	}
+	perfmetrics.FlushAll() // TOKEN: requests that finished during shutdown (pkg/perf_metrics/token_flush.go)
 	// 内存中的看板数据保存入库，避免重启丢失未落库数据 (issue #5679)
 	if common.DataExportEnabled {
 		model.SaveQuotaDataCache()
@@ -328,7 +358,7 @@ func InitResources() error {
 	model.CheckSetup()
 
 	// Initialize options, should after model.InitDB()
-	if common.IsMasterNode {
+	if common.TokenMigrates() { // TOKEN: master unless TOKEN_SKIP_MIGRATIONS
 		if err := model.MigrateRetiredFrontendOptions(); err != nil {
 			common.SysError("failed to migrate retired frontend options: " + err.Error())
 		}

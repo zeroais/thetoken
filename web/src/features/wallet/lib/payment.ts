@@ -21,6 +21,7 @@ import {
   DEFAULT_PRESET_MULTIPLIERS,
   DEFAULT_PAYMENT_TYPE,
   DEFAULT_MIN_TOPUP,
+  MOYASAR_SAR_PER_USD,
 } from '../constants'
 import type { PaymentMethod, PresetAmount, TopupInfo } from '../types'
 
@@ -73,6 +74,28 @@ export function submitPaymentForm(
  */
 export function isStripePayment(paymentType: string): boolean {
   return paymentType === PAYMENT_TYPES.STRIPE
+}
+
+/**
+ * TOKEN: check if payment method is Moyasar (SAR, hosted invoice page)
+ */
+export function isMoyasarPayment(paymentType: string): boolean {
+  return paymentType === PAYMENT_TYPES.MOYASAR
+}
+
+/**
+ * TOKEN: the USD equivalent of what Moyasar charges for a credit price, as
+ * the server quotes it (controller/token_moyasar_pricing.go): whole halalas,
+ * the price and the credit purchase fee each rounded up. A plain
+ * price x (1 + fee) shows $5.275 as "5.27" while Moyasar charges 19.79 SAR.
+ */
+export function moyasarChargeUSD(creditPriceUSD: number, feeRate: number) {
+  const halalasPerUSD = MOYASAR_SAR_PER_USD * 100
+  // Round away float noise (20000 x 0.055 = 1100.0000000000002) before Ceil.
+  const ceil = (v: number) => Math.ceil(Math.round(v * 1e6) / 1e6)
+  const base = ceil(creditPriceUSD * halalasPerUSD)
+  const fee = ceil(base * feeRate)
+  return (base + fee) / halalasPerUSD
 }
 
 /**
@@ -144,6 +167,10 @@ export function getDefaultPaymentType(topupInfo: TopupInfo | null): string {
     return PAYMENT_TYPES.WAFFO_PANCAKE
   }
 
+  if (topupInfo.enable_moyasar_topup) {
+    return PAYMENT_TYPES.MOYASAR
+  }
+
   return DEFAULT_PAYMENT_TYPE
 }
 
@@ -169,6 +196,10 @@ export function getMinTopupAmount(topupInfo: TopupInfo | null): number {
 
   if (topupInfo.enable_waffo_pancake_topup) {
     return topupInfo.waffo_pancake_min_topup || DEFAULT_MIN_TOPUP
+  }
+
+  if (topupInfo.enable_moyasar_topup) {
+    return topupInfo.moyasar_min_topup || DEFAULT_MIN_TOPUP
   }
 
   return DEFAULT_MIN_TOPUP

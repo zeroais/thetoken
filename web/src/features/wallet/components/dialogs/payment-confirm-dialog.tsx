@@ -33,7 +33,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatLocalCurrencyAmount } from '@/lib/currency'
 
 import { DEFAULT_DISCOUNT_RATE } from '../../constants'
-import { formatCurrency, getPaymentIcon } from '../../lib'
+import { getPaymentIcon } from '../../lib'
 import type { PaymentMethod } from '../../types'
 
 interface PaymentConfirmDialogProps {
@@ -46,7 +46,11 @@ interface PaymentConfirmDialogProps {
   calculating: boolean
   processing: boolean
   discountRate?: number
+  /** TOKEN: credit purchase fee rate already included in paymentAmount */
+  feeRate?: number
   usdExchangeRate?: number
+  /** TOKEN: the gateway charges in SAR at this rate per USD (Moyasar) */
+  sarPerUsd?: number
 }
 
 export function PaymentConfirmDialog({
@@ -59,9 +63,22 @@ export function PaymentConfirmDialog({
   calculating,
   processing,
   discountRate = DEFAULT_DISCOUNT_RATE,
+  feeRate = 0,
   usdExchangeRate = 1,
+  sarPerUsd,
 }: PaymentConfirmDialogProps) {
   const { t } = useTranslation()
+  // TOKEN: charges are money; show them to the cent with the currency symbol,
+  // like the top-up amount (formatCurrency printed the fee as "0.2751").
+  const formatMoney = (amount: number) =>
+    formatLocalCurrencyAmount(amount, {
+      digitsLarge: 2,
+      digitsSmall: 2,
+      abbreviate: false,
+    })
+  const hasFee = feeRate > 0 && paymentAmount > 0
+  const feeAmount = hasFee ? paymentAmount - paymentAmount / (1 + feeRate) : 0
+  const feePercent = Number((feeRate * 100).toFixed(2))
   const hasDiscount = discountRate > 0 && discountRate < 1 && paymentAmount > 0
   const originalAmount = hasDiscount ? paymentAmount / discountRate : 0
   const discountAmount = hasDiscount ? originalAmount - paymentAmount : 0
@@ -92,6 +109,19 @@ export function PaymentConfirmDialog({
             </span>
           </div>
 
+          {hasFee && (
+            <div className='flex items-center justify-between'>
+              <span className='text-muted-foreground text-sm'>
+                {t('Credit purchase fee ({{rate}}%)', { rate: feePercent })}
+              </span>
+              {calculating ? (
+                <Skeleton className='h-5 w-16' />
+              ) : (
+                <span className='font-medium'>{formatMoney(feeAmount)}</span>
+              )}
+            </div>
+          )}
+
           <div className='flex items-center justify-between'>
             <span className='text-muted-foreground text-sm'>
               {t('You Pay')}
@@ -101,23 +131,43 @@ export function PaymentConfirmDialog({
             ) : (
               <div className='flex items-baseline gap-2'>
                 <span className='text-2xl font-semibold'>
-                  {formatCurrency(paymentAmount)}
+                  {formatMoney(paymentAmount)}
                 </span>
                 {hasDiscount && (
                   <span className='text-muted-foreground text-sm line-through'>
-                    {formatCurrency(originalAmount)}
+                    {formatMoney(originalAmount)}
                   </span>
                 )}
               </div>
             )}
           </div>
 
+          {sarPerUsd !== undefined && sarPerUsd > 0 && !calculating && (
+            <p className='text-muted-foreground text-xs'>
+              {t(
+                'Charged in Saudi riyals: {{amount}} SAR (1 USD = {{rate}} SAR)',
+                {
+                  amount: (paymentAmount * sarPerUsd).toFixed(2),
+                  rate: sarPerUsd.toFixed(2),
+                }
+              )}
+            </p>
+          )}
+
+          {hasFee && (
+            <p className='text-muted-foreground text-xs'>
+              {t(
+                'The credit purchase fee is not refundable. Unused credit is refundable minus this fee.'
+              )}
+            </p>
+          )}
+
           {hasDiscount && !calculating && (
             <div className='bg-muted/50 rounded-lg p-3'>
               <div className='flex items-center justify-between text-sm'>
                 <span className='text-muted-foreground'>{t('You save')}</span>
                 <span className='font-semibold text-green-600'>
-                  {formatCurrency(discountAmount)}
+                  {formatMoney(discountAmount)}
                 </span>
               </div>
             </div>

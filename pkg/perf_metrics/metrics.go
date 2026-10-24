@@ -118,6 +118,7 @@ func Record(sample Sample) {
 	}
 	actual, _ := hotBuckets.LoadOrStore(key, &atomicBucket{})
 	actual.(*atomicBucket).add(sample)
+	model.TokenRecordPerfSample(sample.Model, key.bucketTs, sample.HasTtft, sample.TtftMs, sample.OutputTokens, sample.GenerationMs) // TOKEN: public percentiles
 	gopool.Go(func() {
 		recordRedis(key, sample)
 	})

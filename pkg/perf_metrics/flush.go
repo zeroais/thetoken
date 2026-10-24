@@ -19,6 +19,7 @@ func flushLoop() {
 			continue
 		}
 		flushCompletedBuckets()
+		model.TokenFlushPerfHistograms(bucketStart(time.Now().Unix())) // TOKEN: public percentiles
 		cleanupExpiredMetrics(setting.RetentionDays)
 	}
 }

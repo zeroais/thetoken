@@ -29,6 +29,7 @@ import type {
   AmountResponse,
   PaymentResponse,
   StripePaymentResponse,
+  MoyasarPaymentResponse,
   AffiliateCodeResponse,
   AffiliateTransferResponse,
   BillingHistoryResponse,
@@ -89,6 +90,18 @@ export async function calculateStripeAmount(
   request: AmountRequest
 ): Promise<AmountResponse> {
   const res = await api.post('/api/user/stripe/amount', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * TOKEN: calculate the Moyasar charge (USD equivalent of the SAR invoice)
+ */
+export async function calculateMoyasarAmount(
+  request: AmountRequest
+): Promise<AmountResponse> {
+  const res = await api.post('/api/user/moyasar/amount', request, {
     skipBusinessError: true,
   } as Record<string, unknown>)
   return res.data
@@ -244,5 +257,17 @@ export async function completeOrder(
   request: CompleteOrderRequest
 ): Promise<ApiResponse> {
   const res = await api.post('/api/user/topup/complete', request)
+  return res.data
+}
+
+/**
+ * TOKEN: request a Moyasar invoice (hosted payment page, charged in SAR)
+ */
+export async function requestMoyasarPayment(
+  request: PaymentRequest
+): Promise<MoyasarPaymentResponse> {
+  const res = await api.post('/api/user/moyasar/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
   return res.data
 }

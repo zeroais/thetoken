@@ -213,10 +213,10 @@ describe('security page migration', () => {
     })
     expect(within(bindings).getAllByRole('listitem')).toHaveLength(5)
     expect(within(bindings).getByText('Gitea')).toBeVisible()
+    // TOKEN: cards share the row through auto-fit columns.
     expect(bindings).toHaveClass(
       'grid-cols-1',
-      'sm:grid-cols-2',
-      'lg:grid-cols-3',
+      'sm:grid-cols-[repeat(auto-fit,minmax(18rem,1fr))]',
       'gap-2'
     )
     expect(screen.queryByText('Custom OAuth')).not.toBeInTheDocument()

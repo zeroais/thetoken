@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils'
 
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
+import { ConsoleFooter } from './token-console-footer'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -51,6 +52,7 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
               )}
             >
               {props.children ?? <AnimatedOutlet />}
+              <ConsoleFooter />
             </SidebarInset>
           </div>
         </SidebarProvider>

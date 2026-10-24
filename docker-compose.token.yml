@@ -1,0 +1,101 @@
+# TOKEN local stack: full image (frontend + backend) built from this checkout,
+# with PostgreSQL and Valkey (Redis-compatible, matches production ElastiCache).
+#
+# Usage:
+#   cp .env.token.example .env      # then replace every placeholder
+#   docker compose -f docker-compose.token.yml up -d --build
+#   open http://localhost:3000
+#
+# Stop:        docker compose -f docker-compose.token.yml down
+# Reset data:  docker compose -f docker-compose.token.yml down -v
+#
+# Local HTTP only. Production uses docker-compose.prod.yml / Terraform (later phases).
+
+name: token
+
+services:
+  token:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: token:local-v1.0.0-rc.42
+    restart: unless-stopped
+    command: --log-dir /app/logs
+    ports:
+      - "127.0.0.1:${TOKEN_HTTP_PORT:-3000}:3000"
+    volumes:
+      - token_data:/data
+      - token_logs:/app/logs
+    environment:
+      SQL_DSN: postgresql://token:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@postgres:5432/token
+      REDIS_CONN_STRING: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      CRYPTO_SECRET: ${CRYPTO_SECRET:?set CRYPTO_SECRET in .env}
+      SESSION_COOKIE_SECURE: "false"
+      TZ: UTC
+      ERROR_LOG_ENABLED: "true"
+      BATCH_UPDATE_ENABLED: "true"
+      NODE_NAME: token-local-1
+      # Stay under PostgreSQL's max_connections (100 here); upstream's
+      # default pool (1000) exhausts it under load.
+      SQL_MAX_OPEN_CONNS: ${SQL_MAX_OPEN_CONNS:-80}
+      SQL_MAX_IDLE_CONNS: ${SQL_MAX_IDLE_CONNS:-40}
+      # Local test stack: bound the wait for upstream response headers so a
+      # hung provider fails over quickly (production uses 300 s).
+      RELAY_RESPONSE_HEADER_TIMEOUT: ${RELAY_RESPONSE_HEADER_TIMEOUT:-30}
+      # Set to http://mock-stripe:12111 to send Stripe calls to the end-to-end
+      # test fake. Live Stripe keys are refused while it is set.
+      TOKEN_STRIPE_API_BASE: ${TOKEN_STRIPE_API_BASE:-}
+      # Sign-in, sign-up and key-rotation limit per IP (20 per 20 min, as in
+      # production). Repeated e2e runs from one IP may need more locally.
+      CRITICAL_RATE_LIMIT: ${CRITICAL_RATE_LIMIT:-20}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api/status | grep -q '\"success\":true'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  postgres:
+    image: postgres:17.9-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: token
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: token
+    volumes:
+      - token_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U token -d token"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: valkey/valkey:8.1.5-alpine
+    restart: unless-stopped
+    command: ["valkey-server", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}"]
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+
+  # Local SMTP catcher: point the console's SMTP settings here in development.
+  # Web UI on http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.27.10
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  token_data:
+  token_logs:
+  token_pg_data:

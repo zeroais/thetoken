@@ -124,3 +124,29 @@ func setupRelayRouterTestDB(t *testing.T) {
 		}
 	})
 }
+
+// TOKEN: the API base URL opened in a browser points to the docs; the relay
+// routes under /v1 keep requiring an API key.
+func TestAPIBaseURLPointsToTheDocs(t *testing.T) {
+	setupRelayRouterTestDB(t)
+	engine := gin.New()
+	SetRelayRouter(engine)
+	SetTokenPublicRouter(engine)
+
+	for accept, want := range map[string]string{
+		"text/html,application/xhtml+xml": `<a href="https://thetoken.dev/docs">`,
+		"application/json":                `"docs":"https://thetoken.dev/docs"`,
+	} {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/v1", nil)
+		request.Header.Set("Accept", accept)
+		engine.ServeHTTP(recorder, request)
+		require.Equal(t, http.StatusOK, recorder.Code, accept)
+		assert.Contains(t, recorder.Body.String(), want, accept)
+		assert.NotContains(t, recorder.Body.String(), "Invalid URL", accept)
+	}
+
+	recorder := httptest.NewRecorder()
+	engine.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/v1/models", nil))
+	assert.Equal(t, http.StatusUnauthorized, recorder.Code)
+}

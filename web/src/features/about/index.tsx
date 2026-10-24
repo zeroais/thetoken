@@ -21,6 +21,7 @@ import { Construction } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
+import { ProjectCredits } from '@/components/layout/components/token-attribution'
 import { RichContent } from '@/components/rich-content'
 import { Skeleton } from '@/components/ui/skeleton'
 import { isHttpUrl, isLikelyHtml } from '@/lib/content-format'
@@ -142,6 +143,7 @@ export function About() {
     return (
       <PublicLayout>
         <EmptyAboutState />
+        <ProjectCredits />
       </PublicLayout>
     )
   }
@@ -155,6 +157,7 @@ export function About() {
           title={t('About')}
           sandbox='allow-forms allow-popups allow-popups-to-escape-sandbox allow-scripts'
         />
+        <ProjectCredits />
       </PublicLayout>
     )
   }
@@ -168,6 +171,7 @@ export function About() {
           content={rawContent}
           className='prose-neutral dark:prose-invert max-w-none'
         />
+        <ProjectCredits />
       </PublicLayout>
     )
   }
@@ -181,6 +185,7 @@ export function About() {
           className='prose-neutral dark:prose-invert max-w-none'
         />
       </div>
+      <ProjectCredits />
     </PublicLayout>
   )
 }

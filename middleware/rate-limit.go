@@ -115,9 +115,10 @@ func redisRateLimiter(c *gin.Context, maxRequestNum int, duration int64, mark st
 		duration,
 	)
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("rate limit check failed (mark=%s): %v", mark, err))
-		c.Status(http.StatusInternalServerError)
-		c.Abort()
+		// TOKEN: Redis is down; keep limiting with this node's local limiter
+		// instead of failing every request with 500.
+		logger.LogError(c.Request.Context(), fmt.Sprintf("rate limit check failed, using local limiter (mark=%s): %v", mark, err))
+		memoryRateLimiter(c, maxRequestNum, duration, mark)
 		return
 	}
 	if !allowed {
@@ -146,6 +147,8 @@ func writeRateLimited(c *gin.Context, retryAfterSeconds int64) {
 }
 
 func rateLimitFactory(maxRequestNum int, duration int64, mark string) func(c *gin.Context) {
+	// TOKEN: also the fallback when Redis fails at request time.
+	inMemoryRateLimiter.Init(common.RateLimitKeyExpirationDuration)
 	if common.RedisEnabled {
 		return func(c *gin.Context) {
 			redisRateLimiter(c, maxRequestNum, duration, mark)
@@ -217,6 +220,8 @@ func UploadRateLimit() func(c *gin.Context) {
 // instead of client IP, making it resistant to proxy rotation attacks.
 // Must be used AFTER authentication middleware (UserAuth).
 func userRateLimitFactory(maxRequestNum int, duration int64, mark string) func(c *gin.Context) {
+	// TOKEN: also the fallback when Redis fails at request time.
+	inMemoryRateLimiter.Init(common.RateLimitKeyExpirationDuration)
 	if common.RedisEnabled {
 		return func(c *gin.Context) {
 			userID := c.GetInt("id")
@@ -250,9 +255,11 @@ func userRateLimitFactory(maxRequestNum int, duration int64, mark string) func(c
 func userRedisRateLimiter(c *gin.Context, maxRequestNum int, duration int64, key string) {
 	allowed, _, ttlSeconds, err := redisFixedWindowTake(c.Request.Context(), key, maxRequestNum, duration)
 	if err != nil {
-		logger.LogError(c.Request.Context(), fmt.Sprintf("rate limit check failed (key=%s): %v", key, err))
-		c.Status(http.StatusInternalServerError)
-		c.Abort()
+		// TOKEN: fall back to this node's local limiter while Redis is down.
+		logger.LogError(c.Request.Context(), fmt.Sprintf("rate limit check failed, using local limiter (key=%s): %v", key, err))
+		if !inMemoryRateLimiter.Request(key, maxRequestNum, duration) {
+			writeRateLimited(c, duration)
+		}
 		return
 	}
 	if !allowed {

@@ -153,21 +153,17 @@ describe('pricing controls', () => {
     expect(props.onTokenUnitChange).toHaveBeenCalledTimes(1)
   })
 
-  it('changes the recharge display mode with an accessible selected state', async () => {
-    const props = toolbarProps()
-    const user = userEvent.setup()
-    const { rerender } = render(<PricingToolbar {...props} />)
-    await user.click(screen.getByRole('button', { name: 'Recharge' }))
-    expect(props.onRechargePriceChange).toHaveBeenCalledWith(true)
-    rerender(<PricingToolbar {...props} showRechargePrice />)
-    expect(screen.getByRole('button', { name: 'Recharge' })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    )
-    expect(screen.getByRole('button', { name: 'Standard' })).toHaveAttribute(
-      'aria-pressed',
-      'false'
-    )
+  // TOKEN: prices are USD per 1M tokens only; the Standard/Recharge mode is
+  // not offered (the recharge rate is fixed at 1.0).
+  it('offers no Standard/Recharge price mode but keeps the token unit switch', () => {
+    render(<PricingToolbar {...toolbarProps()} />)
+    expect(
+      screen.queryByRole('group', { name: 'Price display mode' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Recharge' })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Token unit' })).toBeVisible()
   })
 
   it('switches to table view with the keyboard and exposes the selected view', async () => {

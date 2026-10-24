@@ -100,6 +100,7 @@ func ensureLogRequestId(log *Log) {
 
 func createLog(log *Log) error {
 	ensureLogRequestId(log)
+	log.Content = TokenLogText(log.Content) // TOKEN: English log text (token_log_text.go)
 	return LOG_DB.Create(log).Error
 }
 
@@ -337,6 +338,9 @@ type RecordConsumeLogParams struct {
 }
 
 func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
+	if OnConsumeLog != nil { // TOKEN: metrics hook
+		OnConsumeLog(params)
+	}
 	if !common.LogConsumeEnabled {
 		return
 	}
@@ -345,6 +349,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	requestId := c.GetString(common.RequestIdKey)
 	upstreamRequestId := c.GetString(common.UpstreamRequestIdKey)
 	createdAt := common.GetTimestamp()
+	params.Other = tokenLogProvider(params.ChannelId, params.Other) // TOKEN: provider that served it
 	otherStr := params.Other.JSONString()
 	// 判断是否需要记录 IP
 	needRecordIp := false
@@ -383,7 +388,7 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
 	}
-	if common.DataExportEnabled {
+	if common.DataExportEnabled && !tokenUnbilledChannelTest(params) { // TOKEN: dashboards show billed usage only
 		LogQuotaData(QuotaDataLogParams{
 			UserID:    userId,
 			Username:  username,

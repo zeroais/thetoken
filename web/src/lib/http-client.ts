@@ -32,6 +32,8 @@ import {
 } from '@/lib/server-error-message'
 import { useAuthStore } from '@/stores/auth-store'
 
+import { isMFAEnrollmentRequired, redirectToMFAEnrollment } from './token-mfa'
+
 declare module 'axios' {
   export interface AxiosRequestConfig {
     skipBusinessError?: boolean
@@ -139,6 +141,7 @@ api.interceptors.response.use(
         })
       }
     }
+    if (isMFAEnrollmentRequired(error)) redirectToMFAEnrollment() // TOKEN
     if (axios.isAxiosError(error)) error.message = getServerErrorMessage(error)
     throw error
   }

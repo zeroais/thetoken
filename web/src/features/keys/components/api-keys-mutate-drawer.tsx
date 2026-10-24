@@ -89,7 +89,7 @@ import {
   ApiKeyGroupCombobox,
   type ApiKeyGroupOption,
 } from './api-key-group-combobox'
-import { useApiKeys } from './api-keys-provider'
+import { type ShownApiKey, useApiKeys } from './api-keys-provider'
 import { AutoGroupOrderEditor } from './auto-group-order-editor'
 
 type ApiKeyMutateDrawerProps = {
@@ -106,7 +106,7 @@ export function ApiKeysMutateDrawer({
   const { t } = useTranslation()
   const isUpdate = !!currentRow
   const currentRowId = currentRow?.id
-  const { triggerRefresh } = useApiKeys()
+  const { triggerRefresh, showIssuedKeys } = useApiKeys()
   const { status, loading: statusLoading } = useStatus()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
@@ -302,6 +302,7 @@ export function ApiKeysMutateDrawer({
         // Create mode - handle batch creation
         const count = data.tokenCount || 1
         let successCount = 0
+        const issued: ShownApiKey[] = []
 
         for (let i = 0; i < count; i++) {
           const result = await createApiKey({
@@ -313,6 +314,13 @@ export function ApiKeysMutateDrawer({
           })
           if (result.success) {
             successCount++
+            if (result.data?.key) {
+              issued.push({
+                id: result.data.id,
+                name: result.data.name,
+                key: result.data.key,
+              })
+            }
           } else {
             handleServerError(result, t(ERROR_MESSAGES.CREATE_FAILED))
             break
@@ -327,6 +335,8 @@ export function ApiKeysMutateDrawer({
           )
           onOpenChange(false)
           triggerRefresh()
+          // TOKEN: the only time these keys are visible.
+          showIssuedKeys(issued)
         }
       }
     } catch (error) {

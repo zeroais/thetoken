@@ -226,6 +226,8 @@ func TokenOperationAudit() gin.HandlerFunc {
 			action, content = "token.key_view", "API token key access"
 		case "POST /api/token/batch/keys":
 			action, content = "token.key_view_batch", "API token batch key access"
+		case "POST /api/token/:id/rotate": // TOKEN
+			action, content = "token.key_rotate", "API token key rotation"
 		default:
 			c.Next()
 			return

@@ -53,6 +53,7 @@ import {
 import { apiKeySchema, type ApiKey } from '../../types'
 import { ApiKeyQuotaCell } from '../api-key-quota-cell'
 import { useApiKeysColumns } from '../api-keys-columns'
+import { ApiKeysDialogs } from '../api-keys-dialogs'
 import { ApiKeysProvider } from '../api-keys-provider'
 import { ApiKeysTable } from '../api-keys-table'
 
@@ -298,6 +299,7 @@ function KeysPage() {
   return (
     <ApiKeysProvider>
       <ApiKeysTable />
+      <ApiKeysDialogs />
       <Toaster />
     </ApiKeysProvider>
   )
@@ -420,31 +422,38 @@ it('keeps expired status when the server refuses reactivation', async () => {
   expect(post).not.toHaveBeenCalled()
 })
 
-it.each([true, false])(
-  'fetches a full key only on explicit copy and honors permission success=%s',
-  async (success) => {
-    const user = userEvent.setup()
-    const { post } = await renderKeysPage()
-    post.mockResolvedValue(
-      success
-        ? { data: { success: true, data: { key: 'fake-key-for-test-only' } } }
-        : { data: { success: false, message: 'Verification required' } }
-    )
-    const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
-    await user.click(screen.getByRole('button', { name: 'Open menu' }))
-    expect(post).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('menuitem', { name: 'Copy Key' }))
-    await waitFor(() => expect(post).toHaveBeenCalledWith('/api/token/7/key'))
-    if (success) {
-      await waitFor(() =>
-        expect(copy).toHaveBeenCalledWith('sk-fake-key-for-test-only')
-      )
-    } else {
-      await screen.findByText('Verification required')
-      expect(copy).not.toHaveBeenCalled()
-    }
-  }
-)
+// TOKEN: keys are stored hashed. Copy never fetches a stored key; a lost key
+// is rotated and the new key is shown once.
+it('never fetches a stored key and shows a rotated key once', async () => {
+  const user = userEvent.setup()
+  const { post } = await renderKeysPage()
+  const copy = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue()
+
+  await user.click(screen.getByRole('button', { name: 'Open menu' }))
+  await user.click(screen.getByRole('menuitem', { name: 'Copy Key' }))
+  await screen.findByText(
+    'API keys are shown only once, when they are created. Rotate the key to get a new one.'
+  )
+  expect(post).not.toHaveBeenCalled()
+  expect(copy).not.toHaveBeenCalled()
+
+  post.mockResolvedValue({
+    data: { success: true, data: { id: 7, key: 'fake-rotated-key-for-test' } },
+  })
+  await user.click(screen.getByRole('button', { name: 'Open menu' }))
+  await user.click(screen.getByRole('menuitem', { name: 'Rotate key' }))
+  await screen.findByText('Rotate API key?')
+  await user.click(await screen.findByRole('button', { name: 'Rotate key' }))
+  await waitFor(() => expect(post).toHaveBeenCalledWith('/api/token/7/rotate'))
+  expect(post).not.toHaveBeenCalledWith('/api/token/7/key')
+
+  const shown = await screen.findByDisplayValue('sk-fake-rotated-key-for-test')
+  expect(shown).toBeInTheDocument()
+  await user.click(screen.getByRole('button', { name: 'Copy API key' }))
+  await waitFor(() =>
+    expect(copy).toHaveBeenCalledWith('sk-fake-rotated-key-for-test')
+  )
+})
 
 it('keeps full mobile information without group or quota section headings', async () => {
   const matchMedia = window.matchMedia

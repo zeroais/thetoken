@@ -1,0 +1,74 @@
+/*
+Copyright (C) 2026 TOKEN contributors
+
+This file is part of TOKEN, a fork of New API
+(https://github.com/QuantumNous/new-api), licensed under the GNU Affero
+General Public License v3.0 or later. See LICENSE.
+*/
+/*
+ * TOKEN brand palette. Overrides the default theme in ./theme.css only; user
+ * theme presets (theme-presets.css, set on <body>) still win when chosen.
+ *
+ * Brand tokens: ink #0B0D12, white, accent #4C6FFF, success, error.
+ * The exact accent is used for rings, charts and brand marks. White text on
+ * #4C6FFF is 4.2:1 (below WCAG AA 4.5:1), so filled buttons and links use
+ * AA-tuned shades of the same hue:
+ *   light: primary #3D5CF5 + white text (5.2:1; 5.2:1 as a link on white)
+ *   dark:  primary #6F8BFF + ink text   (6.3:1; 6.3:1 as a link on ink)
+ */
+:root {
+  --token-ink: #0b0d12;
+  --token-accent: #4c6fff;
+
+  --background: #ffffff;
+  --foreground: var(--token-ink);
+  --card: #ffffff;
+  --card-foreground: var(--token-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--token-ink);
+  --primary: #3d5cf5;
+  --primary-foreground: #ffffff;
+  --accent-foreground: var(--token-ink);
+  --destructive: #d92d20;
+  --destructive-foreground: #ffffff;
+  --success: #067647;
+  --success-foreground: #ffffff;
+  --ring: var(--token-accent);
+  --chart-1: var(--token-accent);
+  --overview-accent-1: var(--token-accent);
+  --sidebar-foreground: var(--token-ink);
+  --sidebar-primary: #3d5cf5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent-foreground: #3d5cf5;
+  --sidebar-ring: var(--token-accent);
+}
+
+.dark {
+  --background: var(--token-ink);
+  --foreground: #f5f6f8;
+  --card: #12151c;
+  --card-foreground: #f5f6f8;
+  --popover: #171b23;
+  --popover-foreground: #f5f6f8;
+  --primary: #6f8bff;
+  --primary-foreground: var(--token-ink);
+  --secondary: #1c212b;
+  --muted: #171b23;
+  --muted-foreground: #a3aab8;
+  --accent-foreground: #f5f6f8;
+  --destructive: #f97066;
+  --destructive-foreground: var(--token-ink);
+  --success: #32d583;
+  --success-foreground: var(--token-ink);
+  --ring: var(--token-accent);
+  --chart-1: var(--token-accent);
+  --overview-accent-1: var(--token-accent);
+  --sidebar: #0e1117;
+  --sidebar-foreground: #eef0f4;
+  --sidebar-primary: #6f8bff;
+  --sidebar-primary-foreground: var(--token-ink);
+  --sidebar-accent-foreground: #c7d2ff;
+  --sidebar-ring: var(--token-accent);
+  --skeleton-base: #1c212b;
+  --skeleton-highlight: #262c38;
+}

@@ -120,20 +120,9 @@ export function PricingToolbar(props: PricingToolbarProps) {
         </div>
 
         <div className='flex min-w-0 flex-wrap items-center gap-2'>
-          <ToggleGroup
-            value={[props.showRechargePrice ? 'recharge' : 'standard']}
-            onValueChange={(values) => {
-              if (values.length > 0) {
-                props.onRechargePriceChange(values[0] === 'recharge')
-              }
-            }}
-            variant='outline'
-            size='sm'
-            aria-label={t('Price display mode')}
-          >
-            <ToggleGroupItem value='standard'>{t('Standard')}</ToggleGroupItem>
-            <ToggleGroupItem value='recharge'>{t('Recharge')}</ToggleGroupItem>
-          </ToggleGroup>
+          {/* TOKEN: prices are USD per 1M tokens; the upstream "Recharge" price
+              mode converts to a top-up currency rate that TOKEN sets to 1.0,
+              so the Standard/Recharge toggle is not shown. */}
           <ToggleGroup
             value={[props.tokenUnit]}
             onValueChange={(values) => {

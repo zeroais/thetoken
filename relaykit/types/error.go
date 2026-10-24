@@ -203,6 +203,7 @@ func (e *NewAPIError) ToOpenAIError() OpenAIError {
 	}
 	if e.errorCode != ErrorCodeCountTokenFailed {
 		result.Message = kitutil.MaskSensitiveInfo(result.Message)
+		result.Message = tokenCustomerSafeMessage(e.errorCode, result.Message) // TOKEN
 	}
 	if result.Message == "" {
 		result.Message = string(e.errorType)
@@ -232,6 +233,7 @@ func (e *NewAPIError) ToClaudeError() ClaudeError {
 	}
 	if e.errorCode != ErrorCodeCountTokenFailed {
 		result.Message = kitutil.MaskSensitiveInfo(result.Message)
+		result.Message = tokenCustomerSafeMessage(e.errorCode, result.Message) // TOKEN
 	}
 	if result.Message == "" {
 		result.Message = string(e.errorType)

@@ -218,12 +218,13 @@ func TestRedisFailurePolicies(t *testing.T) {
 		c.Status(http.StatusNoContent)
 	})
 
-	ipResponse := performRateLimitRequest(router, "/ip", "192.0.2.60:12345")
-	assert.Equal(t, http.StatusInternalServerError, ipResponse.Code)
-	assert.Empty(t, ipResponse.Body.String())
-	userResponse := performRateLimitRequest(router, "/user", "192.0.2.61:12345")
-	assert.Equal(t, http.StatusInternalServerError, userResponse.Code)
-	assert.Empty(t, userResponse.Body.String())
+	// TOKEN: with Redis down, limiters fall back to the node-local limiter
+	// (still enforced: the second request in the window is limited) instead
+	// of failing every request with 500.
+	assert.Equal(t, http.StatusNoContent, performRateLimitRequest(router, "/ip", "192.0.2.60:12345").Code)
+	assert.Equal(t, http.StatusTooManyRequests, performRateLimitRequest(router, "/ip", "192.0.2.60:12345").Code)
+	assert.Equal(t, http.StatusNoContent, performRateLimitRequest(router, "/user", "192.0.2.61:12345").Code)
+	assert.Equal(t, http.StatusTooManyRequests, performRateLimitRequest(router, "/user", "192.0.2.61:12345").Code)
 	assert.Equal(t, http.StatusNoContent, performRateLimitRequest(router, "/email", "192.0.2.62:12345").Code)
 }
 

@@ -74,7 +74,7 @@ func getWaffoPancakePayMoney(amount int64, group string) float64 {
 		Mul(decimal.NewFromFloat(topupGroupRatio)).
 		Mul(decimal.NewFromFloat(discount))
 
-	return payMoney.InexactFloat64()
+	return operation_setting.WithTopupFee(payMoney.InexactFloat64()) // TOKEN: credit purchase fee
 }
 
 func normalizeWaffoPancakeTopUpAmount(amount int64) int64 {

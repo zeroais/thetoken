@@ -21,6 +21,8 @@ import { describe, expect, test } from 'vitest'
 import { PAYMENT_TYPES } from '../constants'
 import {
   dispatchSelectedPayment,
+  getMinTopupAmount,
+  isMoyasarPayment,
   isStripePayment,
   isWaffoPayment,
   isWaffoPancakePayment,
@@ -33,6 +35,29 @@ describe('payment type classification', () => {
     expect(isWaffoPancakePayment(PAYMENT_TYPES.WAFFO_PANCAKE)).toBe(true)
     expect(isWaffoPancakePayment(PAYMENT_TYPES.WAFFO)).toBe(false)
     expect(isStripePayment(PAYMENT_TYPES.STRIPE)).toBe(true)
+  })
+
+  test('recognizes Moyasar only for its own payment type', () => {
+    expect(isMoyasarPayment(PAYMENT_TYPES.MOYASAR)).toBe(true)
+    expect(isMoyasarPayment(PAYMENT_TYPES.STRIPE)).toBe(false)
+  })
+})
+
+describe('minimum top-up', () => {
+  test('uses the Moyasar minimum when Moyasar is the only gateway', () => {
+    expect(
+      getMinTopupAmount({
+        enable_online_topup: false,
+        enable_stripe_topup: false,
+        enable_moyasar_topup: true,
+        moyasar_min_topup: 5,
+        pay_methods: [],
+        min_topup: 1,
+        stripe_min_topup: 1,
+        amount_options: [],
+        discount: {},
+      })
+    ).toBe(5)
   })
 })
 

@@ -559,7 +559,8 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		}
 	}
 
-	resp, err := relayClient.Do(req)
+	req, streamHeaders := tokenBoundStreamHeaders(req, info) // TOKEN: token_stream_headers.go
+	resp, err := streamHeaders(relayClient.Do(req))
 	if err != nil {
 		logger.LogError(c, "do request failed: "+err.Error())
 		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))

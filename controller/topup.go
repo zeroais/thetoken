@@ -120,7 +120,9 @@ func GetTopUpInfo(c *gin.Context) {
 		"amount_options":          operation_setting.GetPaymentSetting().AmountOptions,
 		"discount":                operation_setting.GetPaymentSetting().AmountDiscount,
 		"topup_link":              common.TopUpLink,
+		"topup_fee_rate":          operation_setting.TopupFeeRate(), // TOKEN: credit purchase fee
 	}
+	addMoyasarTopUpInfo(c, data) // TOKEN: Moyasar (SAR) gateway
 	common.ApiSuccess(c, data)
 }
 
@@ -174,7 +176,7 @@ func getPayMoney(amount int64, group string) float64 {
 
 	payMoney := dAmount.Mul(dPrice).Mul(dTopupGroupRatio).Mul(dDiscount)
 
-	return payMoney.InexactFloat64()
+	return operation_setting.WithTopupFee(payMoney.InexactFloat64()) // TOKEN: credit purchase fee
 }
 
 func getMinTopup() int64 {

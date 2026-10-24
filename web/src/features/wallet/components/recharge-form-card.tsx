@@ -35,6 +35,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { formatNumber } from '@/lib/format'
+import { TOKEN_BRAND } from '@/lib/token-brand'
 import { cn } from '@/lib/utils'
 
 import {
@@ -43,6 +44,7 @@ import {
   getPaymentIcon,
   getMinTopupAmount,
   calculatePresetPricing,
+  moyasarChargeUSD,
 } from '../lib'
 import type {
   PaymentMethod,
@@ -134,14 +136,16 @@ export function RechargeFormCard({
     topupInfo?.enable_online_topup ||
     topupInfo?.enable_stripe_topup ||
     enableWaffoTopup ||
-    enableWaffoPancakeTopup
+    enableWaffoPancakeTopup ||
+    topupInfo?.enable_moyasar_topup // TOKEN: Moyasar (SAR) gateway
   const hasAnyTopup = hasConfigurableTopup || enableCreemTopup
   const hasStandardPaymentMethods =
     Array.isArray(topupInfo?.pay_methods) && topupInfo.pay_methods.length > 0
   const hasWaffoPaymentMethods =
     Array.isArray(waffoPayMethods) && waffoPayMethods.length > 0
   const minTopup = getMinTopupAmount(topupInfo)
-  const redemptionEnabled = topupInfo?.enable_redemption !== false
+  const redemptionEnabled =
+    TOKEN_BRAND.redemptionCodes && topupInfo?.enable_redemption !== false // TOKEN
 
   if (loading) {
     return (
@@ -232,17 +236,21 @@ export function RechargeFormCard({
                         preset.discount ||
                         topupInfo?.discount?.[preset.value] ||
                         1.0
-                      const {
-                        displayValue,
-                        actualPrice,
-                        savedAmount,
-                        hasDiscount,
-                      } = calculatePresetPricing(
+                      const pricing = calculatePresetPricing(
                         preset.value,
                         priceRatio,
                         discount,
                         usdExchangeRate
                       )
+                      const { displayValue, savedAmount, hasDiscount } = pricing
+                      // TOKEN: show what Moyasar will charge (fee rounded up)
+                      const feeRate = topupInfo?.topup_fee_rate ?? 0
+                      const actualPrice = topupInfo?.enable_moyasar_topup
+                        ? moyasarChargeUSD(
+                            pricing.actualPrice / (1 + feeRate),
+                            feeRate
+                          )
+                        : pricing.actualPrice
                       return (
                         <Button
                           key={preset.value}

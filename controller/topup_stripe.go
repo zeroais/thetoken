@@ -177,7 +177,8 @@ func StripeWebhook(c *gin.Context) {
 	}
 
 	signature := c.GetHeader("Stripe-Signature")
-	logger.LogInfo(ctx, fmt.Sprintf("Stripe webhook 收到请求 path=%q client_ip=%s signature=%q body=%q", c.Request.RequestURI, c.ClientIP(), signature, string(payload)))
+	// TOKEN: never log the payload (customer email, name, billing details).
+	logger.LogInfo(ctx, fmt.Sprintf("Stripe webhook 收到请求 path=%q client_ip=%s body_bytes=%d", c.Request.RequestURI, c.ClientIP(), len(payload)))
 	event, err := webhook.ConstructEventWithOptions(payload, signature, setting.StripeWebhookSecret, webhook.ConstructEventOptions{
 		IgnoreAPIVersionMismatch: true,
 	})
@@ -193,10 +194,25 @@ func StripeWebhook(c *gin.Context) {
 	switch event.Type {
 	case stripe.EventTypeCheckoutSessionCompleted:
 		sessionCompleted(ctx, event, callerIp)
+		if stripeOrderNeedsRetry(event) { // TOKEN: let Stripe redeliver
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 	case stripe.EventTypeCheckoutSessionExpired:
 		sessionExpired(ctx, event)
 	case stripe.EventTypeCheckoutSessionAsyncPaymentSucceeded:
 		sessionAsyncPaymentSucceeded(ctx, event, callerIp)
+		if stripeOrderNeedsRetry(event) { // TOKEN: let Stripe redeliver
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+	case stripe.EventTypeRefundCreated, stripe.EventTypeChargeDisputeCreated:
+		// TOKEN: refunds and chargebacks (token_stripe_reversal.go)
+		if err := handleStripeReversal(ctx, event); err != nil {
+			logger.LogError(ctx, fmt.Sprintf("Stripe reversal failed, will retry event=%s error=%q", event.ID, err.Error()))
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 	case stripe.EventTypeCheckoutSessionAsyncPaymentFailed:
 		sessionAsyncPaymentFailed(ctx, event, callerIp)
 	default:
@@ -301,6 +317,7 @@ func fulfillOrder(ctx context.Context, event stripe.Event, referenceId string, c
 		return
 	}
 
+	sendStripeTopupReceipt(ctx, event, referenceId) // TOKEN: receipt email
 	total, _ := strconv.ParseFloat(event.GetObjectValue("amount_total"), 64)
 	currency := strings.ToUpper(event.GetObjectValue("currency"))
 	logger.LogInfo(ctx, fmt.Sprintf("Stripe 充值成功 trade_no=%s amount_total=%.2f currency=%s event_type=%s client_ip=%s", referenceId, total/100, currency, string(event.Type), callerIp))
@@ -383,6 +400,16 @@ func genStripeLink(referenceId string, customerId string, email string, amount i
 		Mode:                stripe.String(string(stripe.CheckoutSessionModePayment)),
 		AllowPromotionCodes: stripe.Bool(setting.StripePromotionCodesEnabled),
 	}
+	// TOKEN: credit purchase fee as its own line item (token_topup_fee.go).
+	feeItem, err := stripeTopupFeeLineItem(setting.StripePriceId, amount)
+	if err != nil {
+		return "", err
+	}
+	if feeItem != nil {
+		params.LineItems = append(params.LineItems, feeItem)
+	}
+
+	withStripeReceipt(params, email) // TOKEN: Stripe emails a receipt for every top-up
 
 	if "" == customerId {
 		if "" != email {
@@ -439,7 +466,7 @@ func getStripePayMoney(amount float64, group string) float64 {
 		}
 	}
 	payMoney := amount * setting.StripeUnitPrice * topupGroupRatio * discount
-	return payMoney
+	return operation_setting.WithTopupFee(payMoney) // TOKEN: credit purchase fee
 }
 
 func getStripeMinTopup() int64 {
