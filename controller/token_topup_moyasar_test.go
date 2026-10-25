@@ -422,6 +422,55 @@ func TestMoyasarRefundsRemoveCreditOnce(t *testing.T) {
 	})
 }
 
+// TOKEN: re-syncing an order from Moyasar applies what Moyasar confirms and
+// the notifications missed (a paid invoice, a refund), once each; running it
+// again changes nothing, and it refuses orders that are not Moyasar's.
+func TestMoyasarResyncAppliesMissedNotificationsOnce(t *testing.T) {
+	moyasarDatabases(t, func(t *testing.T, dsn string) {
+		fake, customer := setupMoyasar(t, dsn)
+		id := startTopUp(t, fake, customer.Id)
+		resync := func(tradeNo string) (bool, string) {
+			rec := moyasarPost(t, MoyasarResync, "/api/user/moyasar/resync", map[string]any{"trade_no": tradeNo}, 1)
+			var resp struct {
+				Success bool   `json:"success"`
+				Message string `json:"message"`
+			}
+			require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &resp), rec.Body.String())
+			return resp.Success, resp.Message
+		}
+
+		// Not paid yet: nothing to apply.
+		ok, _ := resync(model.MoyasarTradeNo(id))
+		require.True(t, ok)
+		assert.Equal(t, 0.0, quotaUSD(t, customer.Id))
+
+		// Paid, but the webhook never arrived: credited once.
+		fake.pay(id, 3957)
+		ok, msg := resync(model.MoyasarTradeNo(id))
+		require.True(t, ok, msg)
+		assert.Equal(t, 10.0, quotaUSD(t, customer.Id))
+		ok, msg = resync(model.MoyasarTradeNo(id))
+		require.True(t, ok)
+		assert.Contains(t, msg, "already up to date")
+		assert.Equal(t, 10.0, quotaUSD(t, customer.Id))
+
+		// Refunded in full, the webhook missed: the credit ($10) is removed once.
+		fake.refund(id, 3957)
+		ok, msg = resync(model.MoyasarTradeNo(id))
+		require.True(t, ok, msg)
+		assert.Equal(t, 0.0, quotaUSD(t, customer.Id))
+		ok, _ = resync(model.MoyasarTradeNo(id))
+		require.True(t, ok)
+		assert.Equal(t, 0.0, quotaUSD(t, customer.Id))
+
+		ok, msg = resync("stripe_cs_123")
+		assert.False(t, ok)
+		assert.Contains(t, msg, "not a Moyasar order")
+		ok, _ = resync("moyasar_no-such-invoice")
+		assert.False(t, ok)
+	})
+}
+
 // TOKEN: a chargeback recorded by the root user removes the order's credit
 // once per reference (never more than it credited) and suspends the keys when
 // the balance goes negative; unknown invoices change nothing.

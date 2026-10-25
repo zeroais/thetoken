@@ -261,6 +261,17 @@ export async function completeOrder(
 }
 
 /**
+ * TOKEN: re-sync one Moyasar order from Moyasar (root only): applies a paid
+ * invoice or refunds whose notifications never arrived, once each.
+ */
+export async function resyncMoyasarOrder(
+  tradeNo: string
+): Promise<ApiResponse> {
+  const res = await api.post('/api/user/moyasar/resync', { trade_no: tradeNo })
+  return res.data
+}
+
+/**
  * TOKEN: request a Moyasar invoice (hosted payment page, charged in SAR)
  */
 export async function requestMoyasarPayment(

@@ -161,6 +161,7 @@ func SetApiRouter(router *gin.Engine) {
 				adminRoute.GET("/topup", controller.GetAllTopUps)
 				adminRoute.POST("/topup/complete", controller.AdminCompleteTopUp)
 				adminRoute.POST("/moyasar/chargeback", middleware.RootAuth(), controller.MoyasarChargeback) // TOKEN
+				adminRoute.POST("/moyasar/resync", middleware.RootAuth(), controller.MoyasarResync)         // TOKEN
 				adminRoute.GET("/search", controller.SearchUsers)
 				adminRoute.GET("/:id/oauth/bindings", controller.GetUserOAuthBindingsByAdmin)
 				adminRoute.DELETE("/:id/oauth/bindings/:provider_id", controller.UnbindCustomOAuthByAdmin)

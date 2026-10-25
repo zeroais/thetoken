@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-8cdd59c19260`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ac41f2906bbb`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -26,6 +26,7 @@ Files not listed are New API's, unchanged.
 | A | `controller/token_key_rotate.go` | 2026-10-09 |
 | A | `controller/token_moyasar_chargeback.go` | 2026-10-25 |
 | A | `controller/token_moyasar_pricing.go` | 2026-10-22 |
+| A | `controller/token_moyasar_resync.go` | 2026-10-25 |
 | A | `controller/token_public_metrics.go` | 2026-10-24 |
 | A | `controller/token_relay_tools.go` | 2026-10-25 |
 | A | `controller/token_relay_tools_test.go` | 2026-10-24 |
@@ -208,10 +209,12 @@ Files not listed are New API's, unchanged.
 | A | `web/src/features/usage-logs/components/token-log-provider.tsx` | 2026-10-25 |
 | M | `web/src/features/usage-logs/types.ts` | 2026-10-25 |
 | A | `web/src/features/wallet/__tests__/token-gateways.test.tsx` | 2026-10-25 |
-| M | `web/src/features/wallet/api.ts` | 2026-10-17 |
+| M | `web/src/features/wallet/api.ts` | 2026-10-25 |
 | A | `web/src/features/wallet/components/dialogs/__tests__/payment-confirm-dialog.test.tsx` | 2026-10-25 |
+| A | `web/src/features/wallet/components/dialogs/__tests__/token-moyasar-resync.test.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/dialogs/billing-history-dialog.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/dialogs/payment-confirm-dialog.tsx` | 2026-10-25 |
+| A | `web/src/features/wallet/components/dialogs/token-moyasar-resync.tsx` | 2026-10-25 |
 | A | `web/src/features/wallet/components/dialogs/token-topup-charge.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/recharge-form-card.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/constants.ts` | 2026-10-17 |

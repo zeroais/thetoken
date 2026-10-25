@@ -54,6 +54,7 @@ import {
   getPaymentMethodName,
   formatTimestamp,
 } from '../../lib/billing'
+import { MoyasarResyncButton } from './token-moyasar-resync'
 import { TopupChargeDetails } from './token-topup-charge'
 
 interface BillingHistoryDialogProps {
@@ -79,6 +80,7 @@ export function BillingHistoryDialog({
     handlePageSizeChange,
     handleSearch,
     handleCompleteOrder,
+    refresh,
   } = useBillingHistory()
 
   const [confirmTradeNo, setConfirmTradeNo] = useState<string | null>(null)
@@ -274,6 +276,14 @@ export function BillingHistoryDialog({
                             </div>
                           </>
                         )}
+                      </div>
+
+                      {/* TOKEN: root only, Moyasar orders */}
+                      <div className='mt-4 flex justify-end empty:hidden'>
+                        <MoyasarResyncButton
+                          tradeNo={record.trade_no}
+                          onDone={refresh}
+                        />
                       </div>
 
                       {/* Admin Actions */}
