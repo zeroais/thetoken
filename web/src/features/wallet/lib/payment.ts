@@ -90,12 +90,22 @@ export function isMoyasarPayment(paymentType: string): boolean {
  * price x (1 + fee) shows $5.275 as "5.27" while Moyasar charges 19.79 SAR.
  */
 export function moyasarChargeUSD(creditPriceUSD: number, feeRate: number) {
+  return (
+    moyasarCharge(creditPriceUSD, feeRate).total / (MOYASAR_SAR_PER_USD * 100)
+  )
+}
+
+/**
+ * TOKEN: the Moyasar charge for a credit price in halalas, itemised as the
+ * server quotes it: the credit's price and the fee, each rounded up.
+ */
+export function moyasarCharge(creditPriceUSD: number, feeRate: number) {
   const halalasPerUSD = MOYASAR_SAR_PER_USD * 100
   // Round away float noise (20000 x 0.055 = 1100.0000000000002) before Ceil.
   const ceil = (v: number) => Math.ceil(Math.round(v * 1e6) / 1e6)
   const base = ceil(creditPriceUSD * halalasPerUSD)
   const fee = ceil(base * feeRate)
-  return (base + fee) / halalasPerUSD
+  return { base, fee, total: base + fee }
 }
 
 /**

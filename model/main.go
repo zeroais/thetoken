@@ -383,6 +383,9 @@ func migrateDB() error {
 	if err := migrateTokenKeyHashes(); err != nil { // TOKEN: store API keys hashed
 		return err
 	}
+	if err := DB.AutoMigrate(&TokenTopUpCharge{}); err != nil { // TOKEN: itemised top-up charges
+		return err
+	}
 	if err := DB.AutoMigrate(&TokenPaymentReversal{}); err != nil { // TOKEN: durable payment reversals
 		return err
 	}

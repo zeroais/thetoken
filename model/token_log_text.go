@@ -2,6 +2,7 @@ package model
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -81,6 +82,28 @@ func tokenLogProvider(channelID int, other *LogOther) *LogOther {
 		other = NewLogOther()
 	}
 	other.SetPublic("provider", *ch.Tag)
+	// Failover: the providers tried before the one that answered (the relay
+	// records each attempt's channel in admin_info.use_channel, the last one
+	// served). Customers see provider names only, never channel ids.
+	if tried, ok := other.adminInfo["use_channel"].([]string); ok && len(tried) > 1 {
+		var failed []string
+		for _, idText := range tried[:len(tried)-1] {
+			id, err := strconv.Atoi(idText)
+			if err != nil {
+				continue
+			}
+			prev, err := CacheGetChannel(id)
+			if err != nil || prev == nil || !strings.HasPrefix(prev.Name, "token:") || prev.Tag == nil || *prev.Tag == "" {
+				continue
+			}
+			if !slices.Contains(failed, *prev.Tag) {
+				failed = append(failed, *prev.Tag)
+			}
+		}
+		if len(failed) > 0 {
+			other.SetPublic("failover_from", failed)
+		}
+	}
 	return other
 }
 

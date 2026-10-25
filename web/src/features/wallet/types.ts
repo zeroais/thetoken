@@ -279,6 +279,16 @@ export interface TopupRecord {
   complete_time?: number
   /** Payment status */
   status: TopupStatus
+  /** TOKEN: what the order charged, itemised (Moyasar orders) */
+  charge?: TopupCharge
+}
+
+/** TOKEN: an order's charge in minor units of its currency (halalas for SAR) */
+export interface TopupCharge {
+  currency: string
+  base_minor: number
+  fee_minor: number
+  total_minor: number
 }
 
 /**

@@ -91,6 +91,7 @@ import {
 } from './api-key-group-combobox'
 import { type ShownApiKey, useApiKeys } from './api-keys-provider'
 import { AutoGroupOrderEditor } from './auto-group-order-editor'
+import { KeySpendingLimitNote } from './token-key-spending-limit' // TOKEN
 
 type ApiKeyMutateDrawerProps = {
   open: boolean
@@ -623,6 +624,7 @@ export function ApiKeysMutateDrawer({
                 icon={<WalletCards className='size-4' />}
                 iconTone='success'
               />
+              <KeySpendingLimitNote limited={!unlimitedQuota} />
               {!unlimitedQuota && (
                 <FormField
                   control={form.control}

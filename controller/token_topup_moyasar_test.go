@@ -128,8 +128,8 @@ func setupMoyasar(t *testing.T, dsn string) (*fakeMoyasar, *model.User) {
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	model.LOG_DB = model.DB
 	common.SetLogDatabaseType(common.MainDatabaseType())
-	require.NoError(t, model.DB.AutoMigrate(&model.User{}, &model.Token{}, &model.TopUp{}, &model.Log{}, &model.Option{}, &model.TokenPaymentReversal{}))
-	for _, table := range []any{&model.TokenPaymentReversal{}, &model.TopUp{}, &model.Token{}, &model.Log{}, &model.User{}} {
+	require.NoError(t, model.DB.AutoMigrate(&model.User{}, &model.Token{}, &model.TopUp{}, &model.Log{}, &model.Option{}, &model.TokenPaymentReversal{}, &model.TokenTopUpCharge{}))
+	for _, table := range []any{&model.TokenTopUpCharge{}, &model.TokenPaymentReversal{}, &model.TopUp{}, &model.Token{}, &model.Log{}, &model.User{}} {
 		require.NoError(t, model.DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(table).Error)
 	}
 
@@ -310,6 +310,37 @@ func TestMoyasarTopUpCreditsOncePerInvoice(t *testing.T) {
 		assert.Equal(t, http.StatusOK, moyasarPost(t, MoyasarCallback, "/api/moyasar/callback", map[string]any{"id": id, "status": "paid"}, 0).Code)
 		assert.Equal(t, 10.0, quotaUSD(t, customer.Id))
 		assert.Equal(t, common.TopUpStatusSuccess, model.GetTopUpByTradeNo(model.MoyasarTradeNo(id)).Status)
+	})
+}
+
+// The order history itemises each Moyasar order as charged: the credit's
+// price, the credit purchase fee and the total, in halalas.
+func TestMoyasarOrderHistoryIsItemised(t *testing.T) {
+	moyasarDatabases(t, func(t *testing.T, dsn string) {
+		fake, customer := setupMoyasar(t, dsn)
+		startTopUp(t, fake, customer.Id)
+
+		rec := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/user/topup/self?p=1&page_size=10", nil)
+		c.Set("id", customer.Id)
+		GetUserTopUps(c)
+		var resp struct {
+			Data struct {
+				Items []struct {
+					Amount int64                   `json:"amount"`
+					Money  float64                 `json:"money"`
+					Charge *model.TokenTopUpCharge `json:"charge"`
+				} `json:"items"`
+			} `json:"data"`
+		}
+		require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &resp), rec.Body.String())
+		require.Len(t, resp.Data.Items, 1)
+		item := resp.Data.Items[0]
+		assert.EqualValues(t, 10, item.Amount)
+		require.NotNil(t, item.Charge, rec.Body.String())
+		assert.Equal(t, model.TokenTopUpCharge{Currency: "SAR", BaseMinor: 3750, FeeMinor: 207, TotalMinor: 3957}, *item.Charge,
+			"$10 of credit is 37.50 SAR, the 5.5% fee rounds up to 2.07 SAR")
 	})
 }
 

@@ -2,6 +2,7 @@ package model
 
 import (
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
@@ -51,27 +52,42 @@ func TestConsumeLogNamesTheProviderOfTokenChannels(t *testing.T) {
 	common.MemoryCacheEnabled, common.LogConsumeEnabled = false, true
 	t.Cleanup(func() { common.MemoryCacheEnabled, common.LogConsumeEnabled = memoryCache, logConsume })
 
-	tag := "Provider A"
+	tag, tagB := "Provider A", "Provider B"
 	catalog := Channel{Name: "token:provider-a:zai-org/glm-5.3", Tag: &tag, Key: "k1", Status: common.ChannelStatusEnabled}
 	other := Channel{Name: "my own channel", Tag: &tag, Key: "k2", Status: common.ChannelStatusEnabled}
+	first := Channel{Name: "token:provider-b:zai-org/glm-5.3", Tag: &tagB, Key: "k3", Status: common.ChannelStatusEnabled}
 	require.NoError(t, DB.Create(&catalog).Error)
 	require.NoError(t, DB.Create(&other).Error)
+	require.NoError(t, DB.Create(&first).Error)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/v1/chat/completions", nil)
 	for _, ch := range []Channel{catalog, other} {
 		RecordConsumeLog(c, 1, RecordConsumeLogParams{ChannelId: ch.Id, ModelName: "zai-org/glm-5.3", Quota: 10, Other: NewLogOther()})
 	}
+	// Provider B failed (twice), then Provider A answered.
+	failedOver := NewLogOther()
+	failedOver.SetAdmin("use_channel", []string{strconv.Itoa(first.Id), strconv.Itoa(first.Id), strconv.Itoa(catalog.Id)})
+	RecordConsumeLog(c, 1, RecordConsumeLogParams{ChannelId: catalog.Id, ModelName: "zai-org/glm-5.3", Quota: 10, Other: failedOver})
 
 	var logs []Log
 	require.NoError(t, LOG_DB.Where("type = ?", LogTypeConsume).Order("id").Find(&logs).Error)
-	require.Len(t, logs, 2)
+	require.Len(t, logs, 3)
 	var got map[string]any
 	require.NoError(t, common.UnmarshalJsonStr(logs[0].Other, &got))
 	assert.Equal(t, "Provider A", got["provider"])
+	assert.NotContains(t, got, "failover_from", "served by the first provider tried")
 	got = nil
 	require.NoError(t, common.UnmarshalJsonStr(logs[1].Other, &got))
 	assert.NotContains(t, got, "provider", "only TOKEN's catalog channels name a provider")
+
+	served := &logs[2]
+	formatUserLogs([]*Log{served}, 0) // what the customer receives
+	got = nil
+	require.NoError(t, common.UnmarshalJsonStr(served.Other, &got))
+	assert.Equal(t, "Provider A", got["provider"])
+	assert.Equal(t, []any{"Provider B"}, got["failover_from"])
+	assert.NotContains(t, got, "admin_info", "channel ids stay admin-only")
 }
 
 func TestChannelTestsStayOutOfTheUsageDashboards(t *testing.T) {

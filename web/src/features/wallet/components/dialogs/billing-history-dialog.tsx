@@ -54,6 +54,7 @@ import {
   getPaymentMethodName,
   formatTimestamp,
 } from '../../lib/billing'
+import { TopupChargeDetails } from './token-topup-charge'
 
 interface BillingHistoryDialogProps {
   open: boolean
@@ -243,26 +244,36 @@ export function BillingHistoryDialog({
                             {getPaymentMethodName(record.payment_method, t)}
                           </div>
                         </div>
-                        <div className='space-y-1'>
-                          <Label className='text-muted-foreground text-xs'>
-                            {t('Amount')}
-                          </Label>
-                          <div className='text-sm font-semibold'>
-                            {formatCurrencyFromUSD(record.amount, {
-                              digitsLarge: 2,
-                              digitsSmall: 2,
-                              abbreviate: false,
-                            })}
-                          </div>
-                        </div>
-                        <div className='space-y-1'>
-                          <Label className='text-muted-foreground text-xs'>
-                            {t('Payment')}
-                          </Label>
-                          <div className='text-sm font-semibold text-red-600'>
-                            {formatNumber(record.money)}
-                          </div>
-                        </div>
+                        {/* TOKEN: itemised when the order recorded its charge */}
+                        {record.charge ? (
+                          <TopupChargeDetails
+                            creditUSD={record.amount}
+                            charge={record.charge}
+                          />
+                        ) : (
+                          <>
+                            <div className='space-y-1'>
+                              <Label className='text-muted-foreground text-xs'>
+                                {t('Amount')}
+                              </Label>
+                              <div className='text-sm font-semibold'>
+                                {formatCurrencyFromUSD(record.amount, {
+                                  digitsLarge: 2,
+                                  digitsSmall: 2,
+                                  abbreviate: false,
+                                })}
+                              </div>
+                            </div>
+                            <div className='space-y-1'>
+                              <Label className='text-muted-foreground text-xs'>
+                                {t('Payment')}
+                              </Label>
+                              <div className='text-sm font-semibold text-red-600'>
+                                {formatNumber(record.money)}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Admin Actions */}

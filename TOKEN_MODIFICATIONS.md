@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-fe9ed9b40335`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-8cdd59c19260`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -10,7 +10,7 @@ Files not listed are New API's, unchanged.
 | A | `.githooks/pre-commit` | 2026-10-09 |
 | M | `Dockerfile` | 2026-10-20 |
 | A | `common/token_brand.go` | 2026-10-09 |
-| A | `common/token_deploy.go` | 2026-10-22 |
+| A | `common/token_deploy.go` | 2026-10-25 |
 | A | `common/token_verification.go` | 2026-10-25 |
 | A | `common/token_verification_test.go` | 2026-10-25 |
 | M | `common/verification.go` | 2026-10-25 |
@@ -38,10 +38,10 @@ Files not listed are New API's, unchanged.
 | M | `controller/token_test.go` | 2026-10-09 |
 | A | `controller/token_topup_fee.go` | 2026-10-09 |
 | A | `controller/token_topup_fee_test.go` | 2026-10-09 |
-| A | `controller/token_topup_moyasar.go` | 2026-10-22 |
+| A | `controller/token_topup_moyasar.go` | 2026-10-25 |
 | A | `controller/token_topup_moyasar_test.go` | 2026-10-25 |
 | A | `controller/token_topup_receipt.go` | 2026-10-09 |
-| M | `controller/topup.go` | 2026-10-22 |
+| M | `controller/topup.go` | 2026-10-25 |
 | M | `controller/topup_stripe.go` | 2026-10-09 |
 | M | `controller/topup_waffo.go` | 2026-10-09 |
 | M | `controller/topup_waffo_pancake.go` | 2026-10-09 |
@@ -71,23 +71,25 @@ Files not listed are New API's, unchanged.
 | A | `middleware/token_signup_limit_test.go` | 2026-10-22 |
 | M | `middleware/turnstile-check.go` | 2026-10-25 |
 | M | `model/log.go` | 2026-10-24 |
-| M | `model/main.go` | 2026-10-24 |
+| M | `model/main.go` | 2026-10-25 |
 | M | `model/token.go` | 2026-10-09 |
 | A | `model/token_alerts.go` | 2026-10-25 |
 | A | `model/token_alerts_test.go` | 2026-10-25 |
 | A | `model/token_hooks.go` | 2026-10-09 |
 | A | `model/token_key_hash.go` | 2026-10-09 |
 | A | `model/token_key_hash_test.go` | 2026-10-09 |
-| A | `model/token_log_text.go` | 2026-10-24 |
-| A | `model/token_log_text_test.go` | 2026-10-24 |
+| A | `model/token_log_text.go` | 2026-10-25 |
+| A | `model/token_log_text_test.go` | 2026-10-25 |
 | M | `model/token_migration_test.go` | 2026-10-09 |
 | A | `model/token_payment_reversal.go` | 2026-10-17 |
 | A | `model/token_perf_histogram.go` | 2026-10-24 |
 | A | `model/token_perf_histogram_test.go` | 2026-10-24 |
+| A | `model/token_restore_drill.go` | 2026-10-25 |
 | A | `model/token_retention.go` | 2026-10-22 |
 | A | `model/token_retention_test.go` | 2026-10-22 |
 | A | `model/token_starter_credit.go` | 2026-10-25 |
 | A | `model/token_starter_credit_test.go` | 2026-10-25 |
+| A | `model/token_topup_charge.go` | 2026-10-25 |
 | A | `model/token_topup_moyasar.go` | 2026-10-17 |
 | M | `model/user.go` | 2026-10-22 |
 | M | `pkg/perf_metrics/flush.go` | 2026-10-24 |
@@ -126,6 +128,8 @@ Files not listed are New API's, unchanged.
 | A | `service/token_email_test.go` | 2026-10-09 |
 | A | `service/token_hooks.go` | 2026-10-09 |
 | A | `service/token_key_networks.go` | 2026-10-25 |
+| A | `service/token_restore_drill.go` | 2026-10-25 |
+| A | `service/token_restore_drill_test.go` | 2026-10-25 |
 | A | `setting/operation_setting/token_alerts.go` | 2026-10-25 |
 | A | `setting/operation_setting/token_billing.go` | 2026-10-25 |
 | A | `setting/operation_setting/token_billing_test.go` | 2026-10-10 |
@@ -168,13 +172,15 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/home/components/sections/stats.tsx` | 2026-10-24 |
 | M | `web/src/features/keys/api.ts` | 2026-10-09 |
 | M | `web/src/features/keys/components/__tests__/api-key-listing.test.tsx` | 2026-10-09 |
+| A | `web/src/features/keys/components/__tests__/token-key-spending-limit.test.tsx` | 2026-10-25 |
 | M | `web/src/features/keys/components/api-keys-cells.tsx` | 2026-10-09 |
 | M | `web/src/features/keys/components/api-keys-dialogs.tsx` | 2026-10-09 |
-| M | `web/src/features/keys/components/api-keys-mutate-drawer.tsx` | 2026-10-09 |
+| M | `web/src/features/keys/components/api-keys-mutate-drawer.tsx` | 2026-10-25 |
 | M | `web/src/features/keys/components/api-keys-provider.tsx` | 2026-10-09 |
 | M | `web/src/features/keys/components/data-table-row-actions.tsx` | 2026-10-09 |
 | A | `web/src/features/keys/components/dialogs/rotate-key-dialog.tsx` | 2026-10-09 |
 | A | `web/src/features/keys/components/dialogs/show-once-key-dialog.tsx` | 2026-10-09 |
+| A | `web/src/features/keys/components/token-key-spending-limit.tsx` | 2026-10-25 |
 | A | `web/src/features/keys/lib/__tests__/token-default-group.test.ts` | 2026-10-24 |
 | M | `web/src/features/keys/lib/api-key-form.ts` | 2026-10-24 |
 | A | `web/src/features/keys/lib/token-key-store.ts` | 2026-10-09 |
@@ -197,14 +203,16 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/system-settings/site/index.tsx` | 2026-10-09 |
 | A | `web/src/features/system-update/__tests__/token-version-label.test.tsx` | 2026-10-24 |
 | M | `web/src/features/system-update/system-update-action.tsx` | 2026-10-24 |
-| A | `web/src/features/usage-logs/components/__tests__/token-log-provider.test.tsx` | 2026-10-24 |
+| A | `web/src/features/usage-logs/components/__tests__/token-log-provider.test.tsx` | 2026-10-25 |
 | M | `web/src/features/usage-logs/components/columns/common-logs-columns.tsx` | 2026-10-24 |
-| A | `web/src/features/usage-logs/components/token-log-provider.tsx` | 2026-10-24 |
-| M | `web/src/features/usage-logs/types.ts` | 2026-10-24 |
+| A | `web/src/features/usage-logs/components/token-log-provider.tsx` | 2026-10-25 |
+| M | `web/src/features/usage-logs/types.ts` | 2026-10-25 |
 | A | `web/src/features/wallet/__tests__/token-gateways.test.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/api.ts` | 2026-10-17 |
-| A | `web/src/features/wallet/components/dialogs/__tests__/payment-confirm-dialog.test.tsx` | 2026-10-23 |
-| M | `web/src/features/wallet/components/dialogs/payment-confirm-dialog.tsx` | 2026-10-23 |
+| A | `web/src/features/wallet/components/dialogs/__tests__/payment-confirm-dialog.test.tsx` | 2026-10-25 |
+| M | `web/src/features/wallet/components/dialogs/billing-history-dialog.tsx` | 2026-10-25 |
+| M | `web/src/features/wallet/components/dialogs/payment-confirm-dialog.tsx` | 2026-10-25 |
+| A | `web/src/features/wallet/components/dialogs/token-topup-charge.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/recharge-form-card.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/constants.ts` | 2026-10-17 |
 | M | `web/src/features/wallet/hooks/use-payment.test.ts` | 2026-10-17 |
@@ -212,20 +220,20 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/wallet/index.tsx` | 2026-10-23 |
 | M | `web/src/features/wallet/lib/billing.ts` | 2026-10-17 |
 | M | `web/src/features/wallet/lib/payment.test.ts` | 2026-10-17 |
-| M | `web/src/features/wallet/lib/payment.ts` | 2026-10-24 |
-| M | `web/src/features/wallet/types.ts` | 2026-10-17 |
+| M | `web/src/features/wallet/lib/payment.ts` | 2026-10-25 |
+| M | `web/src/features/wallet/types.ts` | 2026-10-25 |
 | A | `web/src/hooks/__tests__/use-top-nav-links.test.tsx` | 2026-10-09 |
 | M | `web/src/hooks/use-top-nav-links.ts` | 2026-10-09 |
 | A | `web/src/i18n/__tests__/token-en.test.ts` | 2026-10-24 |
 | M | `web/src/i18n/config.ts` | 2026-10-21 |
-| M | `web/src/i18n/locales/en.json` | 2026-10-17 |
-| M | `web/src/i18n/locales/fr.json` | 2026-10-17 |
-| M | `web/src/i18n/locales/ja.json` | 2026-10-17 |
-| M | `web/src/i18n/locales/ru.json` | 2026-10-17 |
+| M | `web/src/i18n/locales/en.json` | 2026-10-25 |
+| M | `web/src/i18n/locales/fr.json` | 2026-10-25 |
+| M | `web/src/i18n/locales/ja.json` | 2026-10-25 |
+| M | `web/src/i18n/locales/ru.json` | 2026-10-25 |
 | A | `web/src/i18n/locales/token-en.json` | 2026-10-24 |
-| M | `web/src/i18n/locales/vi.json` | 2026-10-17 |
-| M | `web/src/i18n/locales/zh-TW.json` | 2026-10-17 |
-| M | `web/src/i18n/locales/zh.json` | 2026-10-17 |
+| M | `web/src/i18n/locales/vi.json` | 2026-10-25 |
+| M | `web/src/i18n/locales/zh-TW.json` | 2026-10-25 |
+| M | `web/src/i18n/locales/zh.json` | 2026-10-25 |
 | M | `web/src/i18n/static-keys.ts` | 2026-10-09 |
 | A | `web/src/lib/__tests__/token-brand.test.ts` | 2026-10-23 |
 | A | `web/src/lib/__tests__/token-mfa.test.ts` | 2026-10-09 |

@@ -79,6 +79,13 @@ func main() {
 		common.SysLog("TOKEN: retention complete; exiting (TOKEN_RETENTION_ONLY)")
 		return
 	}
+	if common.TokenRestoreDrill { // TOKEN: monthly restore drill job (common/token_deploy.go)
+		if err := service.TokenRestoreDrill(context.Background()); err != nil {
+			common.FatalLog("TOKEN restore drill failed: " + err.Error())
+		}
+		common.SysLog("TOKEN: restore drill passed; exiting (TOKEN_RESTORE_DRILL_ONLY)")
+		return
+	}
 	if common.TokenMigrateOnly { // TOKEN: migration job (common/token_deploy.go)
 		if !common.IsMasterNode {
 			common.FatalLog("TOKEN_MIGRATE_ONLY needs a master node (unset NODE_TYPE)")

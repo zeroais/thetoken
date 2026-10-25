@@ -33,7 +33,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatLocalCurrencyAmount } from '@/lib/currency'
 
 import { DEFAULT_DISCOUNT_RATE } from '../../constants'
-import { getPaymentIcon } from '../../lib'
+import { getPaymentIcon, moyasarCharge } from '../../lib'
 import type { PaymentMethod } from '../../types'
 
 interface PaymentConfirmDialogProps {
@@ -79,6 +79,21 @@ export function PaymentConfirmDialog({
   const hasFee = feeRate > 0 && paymentAmount > 0
   const feeAmount = hasFee ? paymentAmount - paymentAmount / (1 + feeRate) : 0
   const feePercent = Number((feeRate * 100).toFixed(2))
+  // TOKEN: a gateway charging in SAR (Moyasar) shows every line in SAR too,
+  // as charged: the credit's price and the fee, each rounded up to the
+  // halala. Shown only when it matches the server's total.
+  const sar =
+    sarPerUsd !== undefined && sarPerUsd > 0
+      ? moyasarCharge(
+          topupAmount * (discountRate > 0 ? discountRate : 1),
+          feeRate
+        )
+      : undefined
+  const sarItems =
+    sar && Math.round(paymentAmount * sarPerUsd! * 100) === sar.total
+      ? sar
+      : undefined
+  const formatSAR = (halalas: number) => `SAR ${(halalas / 100).toFixed(2)}`
   const hasDiscount = discountRate > 0 && discountRate < 1 && paymentAmount > 0
   const originalAmount = hasDiscount ? paymentAmount / discountRate : 0
   const discountAmount = hasDiscount ? originalAmount - paymentAmount : 0
@@ -100,12 +115,19 @@ export function PaymentConfirmDialog({
             <span className='text-muted-foreground text-sm'>
               {t('Topup Amount')}
             </span>
-            <span className='text-lg font-semibold'>
-              {formatLocalCurrencyAmount(topupAmount * usdExchangeRate, {
-                digitsLarge: 2,
-                digitsSmall: 2,
-                abbreviate: false,
-              })}
+            <span className='text-right'>
+              <span className='block text-lg font-semibold'>
+                {formatLocalCurrencyAmount(topupAmount * usdExchangeRate, {
+                  digitsLarge: 2,
+                  digitsSmall: 2,
+                  abbreviate: false,
+                })}
+              </span>
+              {sarItems && !calculating && (
+                <span className='text-muted-foreground block text-xs'>
+                  {formatSAR(sarItems.base)}
+                </span>
+              )}
             </span>
           </div>
 
@@ -117,7 +139,16 @@ export function PaymentConfirmDialog({
               {calculating ? (
                 <Skeleton className='h-5 w-16' />
               ) : (
-                <span className='font-medium'>{formatMoney(feeAmount)}</span>
+                <span className='text-right'>
+                  <span className='block font-medium'>
+                    {formatMoney(feeAmount)}
+                  </span>
+                  {sarItems && (
+                    <span className='text-muted-foreground block text-xs'>
+                      {formatSAR(sarItems.fee)}
+                    </span>
+                  )}
+                </span>
               )}
             </div>
           )}
@@ -136,6 +167,11 @@ export function PaymentConfirmDialog({
                 {hasDiscount && (
                   <span className='text-muted-foreground text-sm line-through'>
                     {formatMoney(originalAmount)}
+                  </span>
+                )}
+                {sarItems && (
+                  <span className='text-sm font-medium'>
+                    {formatSAR(sarItems.total)}
                   </span>
                 )}
               </div>

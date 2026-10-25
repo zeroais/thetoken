@@ -89,8 +89,31 @@ it('shows the fee of a $5 Moyasar top-up to the cent', () => {
   expect(screen.queryByText('0.2751')).not.toBeInTheDocument()
 })
 
+it('itemises a Moyasar top-up in USD and SAR', () => {
+  render(
+    <PaymentConfirmDialog
+      open
+      onOpenChange={vi.fn()}
+      onConfirm={vi.fn()}
+      topupAmount={5}
+      paymentAmount={5.277333}
+      paymentMethod={{ name: 'Moyasar', type: 'moyasar' }}
+      calculating={false}
+      processing={false}
+      feeRate={0.055}
+      sarPerUsd={3.75}
+    />
+  )
+
+  // $5 of credit is 18.75 SAR; the 5.5% fee rounds up to 1.04 SAR; 19.79 SAR in all.
+  expect(screen.getByText('SAR 18.75')).toBeVisible()
+  expect(screen.getByText('SAR 1.04')).toBeVisible()
+  expect(screen.getByText('SAR 19.79')).toBeVisible()
+})
+
 it('shows no SAR line for gateways that charge in USD', () => {
   renderDialog(0.055)
 
   expect(screen.queryByText(/Saudi riyals/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/^SAR /)).not.toBeInTheDocument()
 })

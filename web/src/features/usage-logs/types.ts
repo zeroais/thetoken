@@ -117,6 +117,8 @@ export interface ToolSurchargeItem {
 export interface LogOtherData {
   /** TOKEN: provider that served the request (model/token_log_text.go) */
   provider?: string
+  /** TOKEN: providers that failed before it (automatic failover) */
+  failover_from?: string[]
   admin_info?: {
     request_policy?: PolicyEvent[]
     is_multi_key?: boolean

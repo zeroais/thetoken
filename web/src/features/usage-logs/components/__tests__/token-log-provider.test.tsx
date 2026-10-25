@@ -18,6 +18,21 @@ it('names the provider that served the request', () => {
   expect(screen.getByText('via Provider A')).toBeVisible()
 })
 
+it('names the providers that failed before the one that answered', () => {
+  render(
+    <TokenLogProvider
+      other={JSON.stringify({
+        provider: 'Provider A',
+        failover_from: ['Provider B', 'Provider C'],
+      })}
+    />
+  )
+
+  expect(
+    screen.getByText('via Provider A (after Provider B, Provider C failed)')
+  ).toBeVisible()
+})
+
 it('renders nothing when the log has no provider', () => {
   const { container } = render(
     <TokenLogProvider other={JSON.stringify({ model_ratio: 1 })} />
