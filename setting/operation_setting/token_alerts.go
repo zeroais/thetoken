@@ -35,6 +35,10 @@ type TokenAlertSetting struct {
 	// Leaked keys: one API key used from at least this many client networks
 	// in an hour.
 	KeyNetworksPerHour int `json:"key_networks_per_hour"`
+
+	// API keys left out of the key checks (spending and networks): TOKEN's
+	// own status-page monitors call from many probe addresses on purpose.
+	IgnoreKeyIDs []int `json:"ignore_key_ids"`
 }
 
 // TokenBalanceAPI reads a prepaid balance: GET URL with the key as a bearer

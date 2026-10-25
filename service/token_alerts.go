@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -102,6 +103,9 @@ func tokenCheckAlerts(ctx context.Context, now time.Time, s *operation_setting.T
 			continue
 		}
 		for _, row := range rows {
+			if group.column == "token_id" && slices.Contains(s.IgnoreKeyIDs, row.ID) {
+				continue
+			}
 			before, err := model.TokenSpendOf(model.LOG_DB, group.column, row.ID, weekAgo, hourAgo)
 			if err != nil {
 				fail(group.column+" baseline", err)
@@ -176,6 +180,9 @@ func tokenCheckAlerts(ctx context.Context, now time.Time, s *operation_setting.T
 			fail("key networks", err)
 		}
 		for _, row := range rows {
+			if slices.Contains(s.IgnoreKeyIDs, row.ID) {
+				continue
+			}
 			n := max(TokenKeyNetworkCount(ctx, row.ID, now), TokenKeyNetworkCount(ctx, row.ID, now.Add(-time.Hour)))
 			if n >= int64(s.KeyNetworksPerHour) {
 				alerts = append(alerts, tokenAlert{Key: fmt.Sprintf("key-networks:%d", row.ID),

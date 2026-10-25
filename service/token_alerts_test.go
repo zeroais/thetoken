@@ -88,6 +88,14 @@ func TestOperatorAlertsFlagAbnormalActivityOnly(t *testing.T) {
 		}
 	}
 
+	setting.IgnoreKeyIDs = []int{11} // a status-page monitor's key
+	keys = nil
+	for _, a := range tokenCheckAlerts(t.Context(), now, setting) {
+		keys = append(keys, a.Key)
+	}
+	assert.NotContains(t, keys, "spend:token_id:11", "an ignored key raises no key alert")
+	assert.Contains(t, keys, "spend:user_id:1", "its account is still checked")
+
 	assert.True(t, tokenAlertNew("spend:user_id:1"))
 	assert.False(t, tokenAlertNew("spend:user_id:1"), "a finding is mailed once per 6 hours")
 }
