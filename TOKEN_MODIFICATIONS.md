@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-d1009d9f3fc4`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-dbcdfa8e84f1`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -201,11 +201,11 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/usage-logs/components/columns/common-logs-columns.tsx` | 2026-10-24 |
 | A | `web/src/features/usage-logs/components/token-log-provider.tsx` | 2026-10-24 |
 | M | `web/src/features/usage-logs/types.ts` | 2026-10-24 |
-| A | `web/src/features/wallet/__tests__/token-gateways.test.tsx` | 2026-10-24 |
+| A | `web/src/features/wallet/__tests__/token-gateways.test.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/api.ts` | 2026-10-17 |
 | A | `web/src/features/wallet/components/dialogs/__tests__/payment-confirm-dialog.test.tsx` | 2026-10-23 |
 | M | `web/src/features/wallet/components/dialogs/payment-confirm-dialog.tsx` | 2026-10-23 |
-| M | `web/src/features/wallet/components/recharge-form-card.tsx` | 2026-10-24 |
+| M | `web/src/features/wallet/components/recharge-form-card.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/constants.ts` | 2026-10-17 |
 | M | `web/src/features/wallet/hooks/use-payment.test.ts` | 2026-10-17 |
 | M | `web/src/features/wallet/hooks/use-payment.ts` | 2026-10-17 |

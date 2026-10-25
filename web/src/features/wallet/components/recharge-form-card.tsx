@@ -569,13 +569,16 @@ export function RechargeFormCard({
           )}
         </div>
       ) : (
-        <Alert className='border-t'>
-          <AlertDescription>
-            {t(
-              'Redemption codes are disabled until the administrator confirms compliance terms.'
-            )}
-          </AlertDescription>
-        </Alert>
+        // TOKEN: no notice when the deployment offers no redemption codes
+        TOKEN_BRAND.redemptionCodes && (
+          <Alert className='border-t'>
+            <AlertDescription>
+              {t(
+                'Redemption codes are disabled until the administrator confirms compliance terms.'
+              )}
+            </AlertDescription>
+          </Alert>
+        )
       )}
     </TitledCard>
   )

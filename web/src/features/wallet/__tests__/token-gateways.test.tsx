@@ -189,3 +189,21 @@ it('hides the redemption code box', () => {
     screen.queryByPlaceholderText('Enter your redemption code')
   ).not.toBeInTheDocument()
 })
+
+it('shows no redemption code notice when codes are not offered', () => {
+  renderRechargeForm({
+    enable_online_topup: false,
+    enable_stripe_topup: false,
+    enable_moyasar_topup: true,
+    enable_redemption: false,
+    pay_methods: [{ name: 'Moyasar', type: 'moyasar', min_topup: 5 }],
+    min_topup: 1,
+    stripe_min_topup: 1,
+    amount_options: [],
+    discount: {},
+  })
+
+  expect(
+    screen.queryByText(/Redemption codes are disabled/)
+  ).not.toBeInTheDocument()
+})

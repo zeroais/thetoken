@@ -62,6 +62,10 @@ func tokenStarterQuota(tx *gorm.DB, email string, verified bool) (int, error) {
 		return 0, res.Error
 	}
 	if res.RowsAffected == 0 {
+		var holder TokenStarterGrant
+		if err := tx.Where("email_hash = ?", grant.EmailHash).First(&holder).Error; err == nil {
+			common.SysLog(fmt.Sprintf("TOKEN: no starter credit: the mailbox is held by user %d", holder.UserId))
+		}
 		return 0, nil
 	}
 	return common.QuotaForNewUser, nil
