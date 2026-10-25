@@ -13,7 +13,7 @@ import (
 // money, identity and configuration.
 var TokenDrillTables = []string{
 	"users", "tokens", "top_ups", "logs", "options", "channels", "two_fas", "user_access_tokens",
-	"token_starter_grants", "token_payment_reversals", "token_topup_charges",
+	"token_starter_grants", "token_payment_reversals", "token_top_up_charges",
 }
 
 // TokenTableCounts returns the row count of each drill table in db.
