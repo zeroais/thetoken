@@ -242,7 +242,7 @@ func TestResponsesWSRequestRunnerUsesExistingMemoryRateLimit(t *testing.T) {
 	apiError := runner(httptest.NewRequest(http.MethodPost, "/v1/responses", nil), "limited", handle)
 	require.NotNil(t, apiError)
 	assert.Equal(t, http.StatusTooManyRequests, apiError.StatusCode)
-	assert.Equal(t, http.StatusText(http.StatusTooManyRequests), apiError.Error())
+	assert.Contains(t, apiError.Error(), "Rate limit reached: at most 1 requests") // TOKEN: explained, not a bare 429
 	assert.Equal(t, 1, called)
 }
 

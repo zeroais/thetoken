@@ -391,6 +391,46 @@ func TestMoyasarRefundsRemoveCreditOnce(t *testing.T) {
 	})
 }
 
+// TOKEN: a chargeback recorded by the root user removes the order's credit
+// once per reference (never more than it credited) and suspends the keys when
+// the balance goes negative; unknown invoices change nothing.
+func TestMoyasarChargebackRemovesCreditOnce(t *testing.T) {
+	moyasarDatabases(t, func(t *testing.T, dsn string) {
+		fake, customer := setupMoyasar(t, dsn)
+		id := startTopUp(t, fake, customer.Id)
+		fake.pay(id, 3957)
+		payment := moyasarPayment{ID: "pay-" + id, Status: "paid", Amount: 3957, Currency: "SAR", InvoiceID: id}
+		require.Equal(t, http.StatusOK, moyasarWebhook(t, moyasarTestWebhookSecret, "payment_paid", false, payment))
+		// $6 of the $10 already spent.
+		require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", customer.Id).Update("quota", int(4*common.QuotaPerUnit)).Error)
+
+		chargeback := func(body map[string]any) (bool, string) {
+			rec := moyasarPost(t, MoyasarChargeback, "/api/user/moyasar/chargeback", body, 0)
+			var resp struct {
+				Success bool   `json:"success"`
+				Message string `json:"message"`
+			}
+			require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &resp), rec.Body.String())
+			return resp.Success, resp.Message
+		}
+		ok, msg := chargeback(map[string]any{"invoice_id": "inv-unknown", "reference": "dp-1"})
+		assert.False(t, ok, msg)
+		assert.Equal(t, 4.0, quotaUSD(t, customer.Id))
+
+		ok, msg = chargeback(map[string]any{"invoice_id": id, "reference": "dp-1"})
+		require.True(t, ok, msg)
+		assert.Equal(t, -6.0, quotaUSD(t, customer.Id), "the whole $10 credit is removed")
+		assertKeysEnabled(t, customer.Id, 0)
+
+		ok, msg = chargeback(map[string]any{"invoice_id": id, "reference": "dp-1"})
+		assert.False(t, ok)
+		assert.Contains(t, msg, "already recorded")
+		ok, _ = chargeback(map[string]any{"invoice_id": id, "reference": "dp-2"})
+		require.True(t, ok)
+		assert.Equal(t, -6.0, quotaUSD(t, customer.Id), "never more than the order credited")
+	})
+}
+
 func assertKeysEnabled(t *testing.T, userID int, want int64) {
 	t.Helper()
 	var n int64

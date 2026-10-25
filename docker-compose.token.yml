@@ -49,6 +49,14 @@ services:
       # Sign-in, sign-up and key-rotation limit per IP (20 per 20 min, as in
       # production). Repeated e2e runs from one IP may need more locally.
       CRITICAL_RATE_LIMIT: ${CRITICAL_RATE_LIMIT:-20}
+      # Accounts per client network per 24 h (production: 3). The e2e tests
+      # sign up from distinct X-Forwarded-For addresses, which the console
+      # trusts from the Docker network (TRUSTED_PROXIES unset: private ranges).
+      TOKEN_SIGNUP_IP_DAILY_LIMIT: ${TOKEN_SIGNUP_IP_DAILY_LIMIT:-3}
+      # Console API requests per IP per 3 minutes (production: upstream's 360).
+      # The full e2e suite sends more from its one container: set 3000 in .env.
+      GLOBAL_API_RATE_LIMIT: ${GLOBAL_API_RATE_LIMIT:-360}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
     depends_on:
       postgres:
         condition: service_healthy

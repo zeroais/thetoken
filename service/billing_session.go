@@ -232,7 +232,7 @@ func (s *BillingSession) preConsume(c *gin.Context, quota int) *types.NewAPIErro
 				userQuota = 0
 			}
 			return types.NewErrorWithStatusCode(
-				fmt.Errorf("用户额度不足, 剩余额度: %s", logger.FormatQuota(userQuota)),
+				fmt.Errorf("insufficient balance: $%.4f left. Top up your credit to continue", float64(userQuota)/common.QuotaPerUnit), // TOKEN: English text
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
@@ -322,6 +322,12 @@ func (s *BillingSession) shouldTrust(c *gin.Context) bool {
 		return false
 	}
 
+	// TOKEN: every request reserves its worst-case cost before it runs
+	// (relay/token_output_reservation.go); no balance skips the reservation.
+	if operation_setting.GetTokenBillingSetting().OutputReservation {
+		return false
+	}
+
 	trustQuota := operation_setting.GetQuotaSetting().TrustQuotaUSD * common.QuotaPerUnit
 	if trustQuota <= 0 || math.IsNaN(trustQuota) || math.IsInf(trustQuota, 0) {
 		return false
@@ -394,13 +400,14 @@ func NewBillingSession(c *gin.Context, relayInfo *relaycommon.RelayInfo, preCons
 		}
 		if userQuota <= 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("用户额度不足, 剩余额度: %s", logger.FormatQuota(userQuota)),
+				fmt.Errorf("insufficient balance: $%.4f left. Top up your credit to continue", float64(userQuota)/common.QuotaPerUnit), // TOKEN: English text
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}
 		if userQuota-preConsumedQuota < 0 {
 			return nil, types.NewErrorWithStatusCode(
-				fmt.Errorf("预扣费额度失败, 用户剩余额度: %s, 需要预扣费额度: %s", logger.FormatQuota(userQuota), logger.FormatQuota(preConsumedQuota)),
+				fmt.Errorf("insufficient balance: this request needs $%.4f reserved and $%.4f is left. Top up your credit or lower max_tokens", // TOKEN: English text
+					float64(preConsumedQuota)/common.QuotaPerUnit, float64(userQuota)/common.QuotaPerUnit),
 				types.ErrorCodeInsufficientUserQuota, http.StatusForbidden,
 				types.ErrOptionWithSkipRetry(), types.ErrOptionWithNoRecordErrorLog())
 		}

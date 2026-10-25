@@ -11,12 +11,13 @@ import (
 // TOKEN fork: browser security headers (upstream sends none).
 //
 // The console is a same-origin SPA with no inline scripts, so scripts are
-// limited to 'self'. Styles allow inline attributes (React style props).
+// limited to 'self', plus Cloudflare's Turnstile widget (human verification
+// on sign-up and sign-in; it runs in a frame from the same origin). Styles allow inline attributes (React style props).
 // Images and the About-page iframe may point to admin-configured https URLs.
 // Override the policy with TOKEN_CSP (e.g. to add an analytics origin), or
 // set TOKEN_CSP=off to disable it.
 const tokenDefaultCSP = "default-src 'self'; " +
-	"script-src 'self'; " +
+	"script-src 'self' https://challenges.cloudflare.com; " + // Turnstile on sign-up and sign-in
 	"style-src 'self' 'unsafe-inline'; " +
 	"img-src 'self' data: blob: https:; " +
 	"font-src 'self' data:; " +

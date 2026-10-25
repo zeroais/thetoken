@@ -8,6 +8,9 @@ type TokenSecuritySetting struct {
 	// Admin and root accounts must have TOTP or a passkey. Until they enrol,
 	// their sessions and access tokens can only reach enrolment routes.
 	RequireAdminMFA bool `json:"require_admin_mfa"`
+	// MaxConcurrentRequests caps the API requests one account may have in
+	// flight at once (middleware/token_relay_guard.go); 0 means no cap.
+	MaxConcurrentRequests int `json:"max_concurrent_requests"`
 }
 
 var tokenSecuritySetting = TokenSecuritySetting{}
