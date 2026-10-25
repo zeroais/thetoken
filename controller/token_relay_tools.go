@@ -38,7 +38,7 @@ func tokenRejectUnsupportedTools(c *gin.Context, request dto.Request) *types.New
 		return nil
 	}
 	return types.NewErrorWithStatusCode(
-		fmt.Errorf("%s does not support tool calling (function calling). Send the request without tools, or choose a model that supports them: https://thetoken.dev/models/", model),
+		fmt.Errorf("%s does not support tool calling (function calling). Send the request without tools, or choose a model that supports them (the models page lists which do)", model),
 		types.ErrorCodeInvalidRequest, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 }
 

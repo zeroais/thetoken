@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ee42f30244ea`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-fe9ed9b40335`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -27,7 +27,7 @@ Files not listed are New API's, unchanged.
 | A | `controller/token_moyasar_chargeback.go` | 2026-10-25 |
 | A | `controller/token_moyasar_pricing.go` | 2026-10-22 |
 | A | `controller/token_public_metrics.go` | 2026-10-24 |
-| A | `controller/token_relay_tools.go` | 2026-10-24 |
+| A | `controller/token_relay_tools.go` | 2026-10-25 |
 | A | `controller/token_relay_tools_test.go` | 2026-10-24 |
 | A | `controller/token_setup.go` | 2026-10-21 |
 | A | `controller/token_setup_test.go` | 2026-10-21 |
