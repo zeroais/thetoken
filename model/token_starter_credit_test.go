@@ -224,3 +224,32 @@ func TestRefusedAccountIsCreditedAfterAnInterruptedRelease(t *testing.T) {
 		assert.EqualValues(t, 1, starterGifts(t, refused.Id))
 	})
 }
+
+// Owner's sign-up of 2026-10-25 refused: an earlier test account on the
+// owner's mailbox, counted by the backfill and since deleted, never received
+// the starter credit, so it does not hold the mailbox. A customer mailbox
+// held by such an account stays held (no farming by deleting accounts).
+func TestOwnerMailboxHeldByANeverCreditedAccountIsReleased(t *testing.T) {
+	useStarterCredit(t, true, func(t *testing.T) {
+		createStaff(t, "owner@gmail.com")
+		common.QuotaForNewUser = 0 // accounts from before the ledger, never credited
+		earlier := insertStarterUser(t, "earlier", "owner+old@gmail.com")
+		customer := insertStarterUser(t, "customer", "someone@gmail.com")
+		require.NoError(t, DB.Migrator().DropTable(&TokenStarterGrant{}))
+		require.NoError(t, migrateTokenStarterGrants()) // counts both as credited
+		require.NoError(t, DB.Delete(&earlier).Error)
+		require.NoError(t, DB.Delete(&customer).Error)
+		common.QuotaForNewUser = 250000
+		refused := insertStarterUser(t, "beta", "owner+beta1@gmail.com")
+		require.Zero(t, refused.Quota)
+
+		require.NoError(t, TokenReleaseStaffStarterGrants())
+		require.NoError(t, TokenReleaseStaffStarterGrants(), "runs once")
+
+		var got User
+		require.NoError(t, DB.First(&got, refused.Id).Error)
+		assert.Equal(t, 250000, got.Quota)
+		assert.EqualValues(t, 1, starterGifts(t, refused.Id))
+		assert.Zero(t, insertStarterUser(t, "again", "someone+2@gmail.com").Quota, "a customer mailbox stays held after deletion")
+	})
+}

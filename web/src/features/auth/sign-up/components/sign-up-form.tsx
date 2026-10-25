@@ -178,6 +178,7 @@ export function SignUpForm({
       if (res?.success) {
         // TOKEN: sign in right away (features/auth/lib/token-sign-up-sign-in.ts)
         const signedIn = await signInAfterSignUp(
+          res.data,
           {
             username: data.username,
             password: data.password,

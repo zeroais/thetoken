@@ -330,11 +330,12 @@ func Register(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
-	return
+	// TOKEN: the new account is signed in by this response, as the sign-in
+	// page would (same login policy and session). The sign-up already passed
+	// the human check (Turnstile), whose one-time token a separate sign-in
+	// request could not reuse.
+	c.Set("login_method", "password")
+	setupLogin(&insertedUser, nil, c)
 }
 
 func GetAllUsers(c *gin.Context) {

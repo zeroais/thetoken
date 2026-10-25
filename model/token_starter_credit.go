@@ -103,8 +103,11 @@ func migrateTokenStarterGrants() error {
 
 // TokenReleaseStaffStarterGrants frees staff accounts' mailboxes, which the
 // first version of the backfill counted as credited, so customer accounts on
-// those mailboxes (plus-address sign-ups by the owner) were refused. For each
-// staff mailbox without a customer's grant, in one transaction: the staff row
+// those mailboxes (plus-address sign-ups by the owner) were refused. A
+// customer row on a staff mailbox counts only if that account received the
+// starter credit (an earlier test account counted by the backfill, deleted or
+// never credited, does not hold the owner's mailbox). For each staff mailbox
+// without a credited customer's grant, in one transaction: the staff row
 // is removed; the earliest enabled customer account on that mailbox keeps it
 // without a second credit if it was already credited (its gift log), and is
 // otherwise credited now through the same ledger claim. Afterwards every such
@@ -152,14 +155,28 @@ func TokenReleaseStaffStarterGrants() error {
 		if err := DB.Where("email_hash = ?", hash).Find(&rows).Error; err != nil {
 			return err
 		}
+		release := staffIDs
 		if len(rows) > 0 && !slices.Contains(staffIDs, rows[0].UserId) {
-			continue // a customer already holds this mailbox
+			// A customer holds the owner's mailbox. It keeps it if it received
+			// the starter credit; an account that never did (one counted by the
+			// backfill when the ledger was created, since deleted or never
+			// credited) does not hold it.
+			holderCredited, err := tokenStarterCreditLogged(rows[0].UserId)
+			if err != nil {
+				return err
+			}
+			if holderCredited {
+				common.SysLog(fmt.Sprintf("TOKEN: staff mailbox held by user %d, which received the starter credit: kept", rows[0].UserId))
+				continue
+			}
+			common.SysLog(fmt.Sprintf("TOKEN: staff mailbox held by user %d, which never received the starter credit: released", rows[0].UserId))
+			release = append(slices.Clone(staffIDs), rows[0].UserId)
 		}
 		owner, credited, err := tokenMailboxOwner(onMailbox[hash])
 		if err != nil {
 			return err
 		}
-		if err := tokenReassignStaffMailbox(hash, staffIDs, owner, credited); err != nil {
+		if err := tokenReassignStaffMailbox(hash, release, owner, credited); err != nil {
 			return err
 		}
 	}
@@ -184,13 +201,14 @@ func tokenMailboxOwner(accounts []User) (*User, bool, error) {
 	return &accounts[0], false, nil
 }
 
-// tokenReassignStaffMailbox removes a staff account's row for a mailbox and, in
-// the same transaction, gives the mailbox to its customer owner: as a plain row
-// when already credited, or with the starter credit otherwise.
-func tokenReassignStaffMailbox(hash string, staffIDs []int, owner *User, credited bool) error {
+// tokenReassignStaffMailbox removes the row of a mailbox held by one of
+// released (staff, or an account never credited) and, in the same
+// transaction, gives the mailbox to its customer owner: as a plain row when
+// already credited, or with the starter credit otherwise.
+func tokenReassignStaffMailbox(hash string, released []int, owner *User, credited bool) error {
 	quota := 0
 	err := DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("email_hash = ? AND user_id IN ?", hash, staffIDs).Delete(&TokenStarterGrant{}).Error; err != nil {
+		if err := tx.Where("email_hash = ? AND user_id IN ?", hash, released).Delete(&TokenStarterGrant{}).Error; err != nil {
 			return err
 		}
 		if owner == nil {

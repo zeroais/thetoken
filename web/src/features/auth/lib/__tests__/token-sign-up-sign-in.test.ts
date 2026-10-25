@@ -20,6 +20,18 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+it('uses the session returned by the sign-up without a second login', async () => {
+  const registered = { access_token: 'access', user: { id: 7 } }
+  const login = vi.spyOn(authApi, 'login')
+  const handleLoginResult = vi.fn().mockResolvedValue(true)
+
+  await expect(
+    signInAfterSignUp(registered, credentials, handleLoginResult)
+  ).resolves.toBe(true)
+  expect(handleLoginResult).toHaveBeenCalledWith(registered)
+  expect(login).not.toHaveBeenCalled()
+})
+
 it('signs the new account in with the registered credentials', async () => {
   const session = { id: 7 }
   const login = vi
@@ -27,9 +39,9 @@ it('signs the new account in with the registered credentials', async () => {
     .mockResolvedValue({ success: true, message: '', data: session as never })
   const handleLoginResult = vi.fn().mockResolvedValue(true)
 
-  await expect(signInAfterSignUp(credentials, handleLoginResult)).resolves.toBe(
-    true
-  )
+  await expect(
+    signInAfterSignUp(undefined, credentials, handleLoginResult)
+  ).resolves.toBe(true)
   expect(login).toHaveBeenCalledWith(credentials)
   expect(handleLoginResult).toHaveBeenCalledWith(session)
 })
@@ -41,16 +53,18 @@ it('falls back to the sign-in page when the login is refused', async () => {
   })
   const handleLoginResult = vi.fn()
 
-  await expect(signInAfterSignUp(credentials, handleLoginResult)).resolves.toBe(
-    false
-  )
+  await expect(
+    signInAfterSignUp(undefined, credentials, handleLoginResult)
+  ).resolves.toBe(false)
   expect(handleLoginResult).not.toHaveBeenCalled()
 })
 
 it('falls back to the sign-in page when the login request fails', async () => {
   vi.spyOn(authApi, 'login').mockRejectedValue(new Error('network'))
 
-  await expect(signInAfterSignUp(credentials, vi.fn())).resolves.toBe(false)
+  await expect(
+    signInAfterSignUp(undefined, credentials, vi.fn())
+  ).resolves.toBe(false)
 })
 
 it('falls back when the login needs a further step such as 2FA', async () => {
@@ -61,6 +75,6 @@ it('falls back when the login needs a further step such as 2FA', async () => {
   })
 
   await expect(
-    signInAfterSignUp(credentials, vi.fn().mockResolvedValue(false))
+    signInAfterSignUp(undefined, credentials, vi.fn().mockResolvedValue(false))
   ).resolves.toBe(false)
 })

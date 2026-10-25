@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-106681623f21`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-d1009d9f3fc4`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -31,6 +31,7 @@ Files not listed are New API's, unchanged.
 | A | `controller/token_relay_tools_test.go` | 2026-10-24 |
 | A | `controller/token_setup.go` | 2026-10-21 |
 | A | `controller/token_setup_test.go` | 2026-10-21 |
+| A | `controller/token_signup_test.go` | 2026-10-25 |
 | A | `controller/token_stripe_backend.go` | 2026-10-24 |
 | A | `controller/token_stripe_reversal.go` | 2026-10-09 |
 | A | `controller/token_stripe_reversal_test.go` | 2026-10-24 |
@@ -85,8 +86,8 @@ Files not listed are New API's, unchanged.
 | A | `model/token_perf_histogram_test.go` | 2026-10-24 |
 | A | `model/token_retention.go` | 2026-10-22 |
 | A | `model/token_retention_test.go` | 2026-10-22 |
-| A | `model/token_starter_credit.go` | 2026-10-24 |
-| A | `model/token_starter_credit_test.go` | 2026-10-24 |
+| A | `model/token_starter_credit.go` | 2026-10-25 |
+| A | `model/token_starter_credit_test.go` | 2026-10-25 |
 | A | `model/token_topup_moyasar.go` | 2026-10-17 |
 | M | `model/user.go` | 2026-10-22 |
 | M | `pkg/perf_metrics/flush.go` | 2026-10-24 |
@@ -153,9 +154,9 @@ Files not listed are New API's, unchanged.
 | A | `web/src/components/layout/components/token-attribution.tsx` | 2026-10-24 |
 | A | `web/src/components/layout/components/token-console-footer.tsx` | 2026-10-24 |
 | M | `web/src/features/about/index.tsx` | 2026-10-09 |
-| A | `web/src/features/auth/lib/__tests__/token-sign-up-sign-in.test.ts` | 2026-10-24 |
-| A | `web/src/features/auth/lib/token-sign-up-sign-in.ts` | 2026-10-24 |
-| M | `web/src/features/auth/sign-up/components/sign-up-form.tsx` | 2026-10-24 |
+| A | `web/src/features/auth/lib/__tests__/token-sign-up-sign-in.test.ts` | 2026-10-25 |
+| A | `web/src/features/auth/lib/token-sign-up-sign-in.ts` | 2026-10-25 |
+| M | `web/src/features/auth/sign-up/components/sign-up-form.tsx` | 2026-10-25 |
 | M | `web/src/features/channels/api.ts` | 2026-10-24 |
 | M | `web/src/features/chat/hooks/use-active-chat-key.ts` | 2026-10-09 |
 | A | `web/src/features/dashboard/components/overview/__tests__/request-preview.test.tsx` | 2026-10-21 |
