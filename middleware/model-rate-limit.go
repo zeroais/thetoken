@@ -93,7 +93,7 @@ func redisRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) g
 			return
 		}
 		if !allowed {
-			abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("您已达到请求数限制：%d分钟内最多请求%d次", setting.ModelRequestRateLimitDurationMinutes, successMaxCount))
+			abortWithOpenAiMessage(c, http.StatusTooManyRequests, tokenRateLimitMessage(successMaxCount, false)) // TOKEN: English text
 			return
 		}
 
@@ -117,7 +117,7 @@ func redisRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) g
 			}
 
 			if !allowed {
-				abortWithOpenAiMessage(c, http.StatusTooManyRequests, fmt.Sprintf("您已达到总请求数限制：%d分钟内最多请求%d次，包括失败次数，请检查您的请求是否正确", setting.ModelRequestRateLimitDurationMinutes, totalMaxCount))
+				abortWithOpenAiMessage(c, http.StatusTooManyRequests, tokenRateLimitMessage(totalMaxCount, true)) // TOKEN: English text
 				return
 			}
 		}
@@ -143,8 +143,7 @@ func memoryRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) 
 
 		// 1. 检查总请求数限制（当totalMaxCount为0时跳过）
 		if totalMaxCount > 0 && !inMemoryRateLimiter.Request(totalKey, totalMaxCount, duration) {
-			c.Status(http.StatusTooManyRequests)
-			c.Abort()
+			abortWithOpenAiMessage(c, http.StatusTooManyRequests, tokenRateLimitMessage(totalMaxCount, true)) // TOKEN: explained, not a bare 429
 			return
 		}
 
@@ -152,7 +151,7 @@ func memoryRateLimitHandler(duration int64, totalMaxCount, successMaxCount int) 
 		if successMaxCount > 0 {
 			reservation = inMemoryRateLimiter.Reserve(successKey, successMaxCount, duration)
 			if reservation == nil {
-				c.AbortWithStatus(http.StatusTooManyRequests)
+				abortWithOpenAiMessage(c, http.StatusTooManyRequests, tokenRateLimitMessage(successMaxCount, false)) // TOKEN: explained, not a bare 429
 				return
 			}
 			defer reservation.Complete(false)

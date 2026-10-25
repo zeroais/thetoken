@@ -145,6 +145,8 @@ func main() {
 	// 数据看板
 	go model.UpdateQuotaData()
 
+	service.StartTokenAlerts() // TOKEN: operator alerts by email (service/token_alerts.go)
+
 	if os.Getenv("CHANNEL_UPDATE_FREQUENCY") != "" {
 		frequency, err := strconv.Atoi(os.Getenv("CHANNEL_UPDATE_FREQUENCY"))
 		if err != nil {

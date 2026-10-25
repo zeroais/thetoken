@@ -17,7 +17,27 @@ type TokenBillingSetting struct {
 	// per-request subscription lookup (TOKEN sells no subscriptions).
 	// Option key: token_billing.wallet_only.
 	WalletOnly bool `json:"wallet_only"`
+	// OutputReservation reserves a request's worst-case output cost before it
+	// runs, next to the input estimate, and lowers the request's maximum
+	// output to what the balance and the key's spending limit can pay
+	// (relay/token_output_reservation.go). Option key:
+	// token_billing.output_reservation.
+	OutputReservation bool `json:"output_reservation"`
+	// ModelOutputTokens is the output a request may produce when the client
+	// sets no maximum, per model name and alias (the catalog seed writes it).
+	ModelOutputTokens map[string]int `json:"model_output_tokens"`
+	// DefaultOutputTokens is used for models not in ModelOutputTokens.
+	DefaultOutputTokens int `json:"default_output_tokens"`
+	// MinOutputTokens: a request whose affordable output is smaller is refused
+	// with an insufficient-balance error instead of an empty reply.
+	MinOutputTokens int `json:"min_output_tokens"`
 }
+
+// Output reservation defaults when the options are unset or invalid.
+const (
+	tokenDefaultOutputTokens = 32768
+	tokenMinOutputTokens     = 256
+)
 
 // maxTopupFeeRate bounds the fee so a mistyped option (5.5 instead of
 // 0.055) cannot multiply a customer's charge.
@@ -61,4 +81,24 @@ func TopupFeeMinor(baseMinor int64) int64 {
 // WalletOnlyBilling reports whether all requests bill from the wallet.
 func WalletOnlyBilling() bool {
 	return tokenBillingSetting.WalletOnly
+}
+
+// TokenOutputTokens is the output a request to model may produce when the
+// client sets no maximum.
+func TokenOutputTokens(model string) int {
+	if n := tokenBillingSetting.ModelOutputTokens[model]; n > 0 {
+		return n
+	}
+	if n := tokenBillingSetting.DefaultOutputTokens; n > 0 {
+		return n
+	}
+	return tokenDefaultOutputTokens
+}
+
+// TokenMinOutputTokens is the smallest output a request may be lowered to.
+func TokenMinOutputTokens() int {
+	if n := tokenBillingSetting.MinOutputTokens; n > 0 {
+		return n
+	}
+	return tokenMinOutputTokens
 }

@@ -28,7 +28,7 @@ func TestTokenSecurityHeaders(t *testing.T) {
 	h := serve()
 	assert.Equal(t, "nosniff", h.Get("X-Content-Type-Options"))
 	assert.Equal(t, "DENY", h.Get("X-Frame-Options"))
-	assert.Contains(t, h.Get("Content-Security-Policy"), "script-src 'self';")
+	assert.Contains(t, h.Get("Content-Security-Policy"), "script-src 'self' https://challenges.cloudflare.com;")
 	assert.Contains(t, h.Get("Content-Security-Policy"), "frame-ancestors 'none'")
 	assert.Empty(t, h.Get("Strict-Transport-Security"), "no HSTS on plain-HTTP local dev")
 

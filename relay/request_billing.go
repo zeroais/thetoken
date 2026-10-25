@@ -63,6 +63,13 @@ func PrepareRequestBilling(c *gin.Context, info *relaycommon.RelayInfo) *types.N
 		logger.LogInfo(c, fmt.Sprintf("模型 %s 免费，跳过预扣费", info.OriginModelName))
 		return nil
 	}
+	requestedMax := 0
+	if meta != nil {
+		requestedMax = meta.MaxTokens
+	}
+	if apiErr := tokenReserveOutput(c, info, &priceData, requestedMax); apiErr != nil { // TOKEN: token_output_reservation.go
+		return apiErr
+	}
 	return service.PreConsumeBilling(c, priceData.QuotaToPreConsume, info)
 }
 
