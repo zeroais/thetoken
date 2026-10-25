@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-750f904d7f84`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-106681623f21`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -11,6 +11,9 @@ Files not listed are New API's, unchanged.
 | M | `Dockerfile` | 2026-10-20 |
 | A | `common/token_brand.go` | 2026-10-09 |
 | A | `common/token_deploy.go` | 2026-10-22 |
+| A | `common/token_verification.go` | 2026-10-25 |
+| A | `common/token_verification_test.go` | 2026-10-25 |
+| M | `common/verification.go` | 2026-10-25 |
 | M | `controller/misc.go` | 2026-10-09 |
 | M | `controller/passkey.go` | 2026-10-09 |
 | M | `controller/relay.go` | 2026-10-24 |
@@ -42,6 +45,7 @@ Files not listed are New API's, unchanged.
 | M | `controller/topup_waffo.go` | 2026-10-09 |
 | M | `controller/topup_waffo_pancake.go` | 2026-10-09 |
 | M | `controller/twofa.go` | 2026-10-09 |
+| M | `controller/user.go` | 2026-10-25 |
 | A | `docker-compose.token.yml` | 2026-10-25 |
 | A | `docs/UPSTREAM_README.md` | 2026-10-09 |
 | M | `go.mod` | 2026-10-24 |
