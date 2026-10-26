@@ -49,8 +49,8 @@ func TestGitHubSecretScanningRevokesLeakedKeys(t *testing.T) {
 	require.NoError(t, model.DB.Create(&key).Error)
 
 	body, err := common.Marshal([]githubSecretMatch{
-		{Token: leaked, Type: "thetoken_api_key", URL: "https://github.com/someone/repo/blob/main/.env", Source: "content"},
-		{Token: stranger, Type: "thetoken_api_key", URL: "https://gist.github.com/x", Source: "gist"},
+		{Token: leaked, Type: "tkn_api_key", URL: "https://github.com/someone/repo/blob/main/.env", Source: "content"},
+		{Token: stranger, Type: "tkn_api_key", URL: "https://gist.github.com/x", Source: "gist"},
 	})
 	require.NoError(t, err)
 	post := func(keyID string, sign *ecdsa.PrivateKey) *httptest.ResponseRecorder {
@@ -79,8 +79,8 @@ func TestGitHubSecretScanningRevokesLeakedKeys(t *testing.T) {
 	var labels []githubSecretLabel
 	require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &labels))
 	assert.Equal(t, []githubSecretLabel{
-		{TokenRaw: leaked, TokenType: "thetoken_api_key", Label: "true_positive"},
-		{TokenRaw: stranger, TokenType: "thetoken_api_key", Label: "false_positive"},
+		{TokenRaw: leaked, TokenType: "tkn_api_key", Label: "true_positive"},
+		{TokenRaw: stranger, TokenType: "tkn_api_key", Label: "false_positive"},
 	}, labels)
 	var revoked model.Token
 	require.NoError(t, model.DB.First(&revoked, key.Id).Error)

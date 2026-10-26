@@ -148,7 +148,7 @@ function replaceToken(source: string, token: string, value: string) {
 function normalizeApiKey(apiKey: string): string {
   const trimmed = apiKey.trim()
   if (!trimmed) return ''
-  return withSkPrefix(trimmed) // TOKEN: keeps thetoken_ keys as they are
+  return withSkPrefix(trimmed) // TOKEN: keeps tkn_ keys as they are
 }
 
 export function resolveChatUrl({

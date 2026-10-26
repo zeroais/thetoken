@@ -11,12 +11,12 @@ export const KEY_SHOWN_ONCE_MESSAGE =
   'API keys are shown only once, when they are created. Rotate the key to get a new one.'
 
 /**
- * The key as a client sends it: keys in TOKEN's format ("thetoken_…",
- * common/token_api_key.go) are complete; older keys and the masked hints of
- * older keys get upstream's "sk-" prefix.
+ * The key as a client sends it: keys in TOKEN's format ("tkn_…", earlier
+ * "thetoken_…"; common/token_api_key.go) are complete; older keys and the
+ * masked hints of older keys get upstream's "sk-" prefix.
  */
 export function withSkPrefix(key: string): string {
-  return key.startsWith('sk-') || key.startsWith('thetoken_')
+  return ['sk-', 'tkn_', 'thetoken_'].some((prefix) => key.startsWith(prefix))
     ? key
     : `sk-${key}`
 }

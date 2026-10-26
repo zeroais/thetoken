@@ -46,29 +46,31 @@ func TestTokenKeyStoredHashedAndLookedUpByHash(t *testing.T) {
 	assert.ErrorIs(t, err, ErrTokenInvalid, "the hash itself must not authenticate")
 }
 
-// TOKEN: new keys have the distinctive "thetoken_" format (prefix, random
+// TOKEN: new keys have the distinctive "tkn_" format (prefix, random
 // part, checksum); they authenticate as sent, and keep their prefix in the
 // display hint. Older "sk-" keys keep working.
 func TestTokenAPIKeyFormat(t *testing.T) {
 	truncateTables(t)
 	raw, err := common.GenerateTokenAPIKey()
 	require.NoError(t, err)
-	assert.True(t, strings.HasPrefix(raw, "thetoken_"))
-	assert.Len(t, raw, len("thetoken_")+43+6)
+	assert.True(t, strings.HasPrefix(raw, "tkn_"))
+	assert.Len(t, raw, len("tkn_")+43+6)
 	assert.True(t, common.IsTokenAPIKey(raw))
 	other, err := common.GenerateTokenAPIKey()
 	require.NoError(t, err)
 	assert.NotEqual(t, raw, other)
 	tampered := raw[:20] + map[bool]string{true: "A", false: "B"}[raw[20] != 'A'] + raw[21:]
 	assert.False(t, common.IsTokenAPIKey(tampered), "the checksum catches a changed character")
-	assert.False(t, common.IsTokenAPIKey("thetoken_short"))
-	assert.False(t, common.IsTokenAPIKey("sk-"+raw[len("thetoken_"):]))
+	assert.False(t, common.IsTokenAPIKey("tkn_short"))
+	assert.False(t, common.IsTokenAPIKey("sk-"+raw[len("tkn_"):]))
+	assert.True(t, common.IsTokenAPIKey("thetoken_"+raw[len("tkn_"):]), "keys issued with the earlier prefix are still recognised")
 
 	token := Token{UserId: 3, Name: "new", Key: raw, Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true}
 	require.NoError(t, token.Insert())
 	var stored Token
 	require.NoError(t, DB.First(&stored, token.Id).Error)
-	assert.Equal(t, "thetoken_"+raw[9:13]+"…"+raw[len(raw)-4:], stored.KeyHint)
+	assert.Equal(t, "tkn_"+raw[4:8]+"…"+raw[len(raw)-4:], stored.KeyHint)
+	assert.Equal(t, "thetoken_"+raw[4:8]+"…"+raw[len(raw)-4:], TokenKeyHint("thetoken_"+raw[len("tkn_"):]))
 	found, err := ValidateUserToken(HashTokenKey(raw))
 	require.NoError(t, err, "a new key authenticates as sent")
 	assert.Equal(t, token.Id, found.Id)

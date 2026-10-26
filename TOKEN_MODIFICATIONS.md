@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ae791bfb3786`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ff9eb9583c9f`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |

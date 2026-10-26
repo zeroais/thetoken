@@ -23,7 +23,7 @@ import (
 
 // TOKEN: GitHub secret scanning partner endpoint
 // (POST https://api.thetoken.dev/public/github-secret-scanning). When GitHub
-// finds a TOKEN API key ("thetoken_…", common/token_api_key.go) in a public
+// finds a TOKEN API key ("tkn_…", common/token_api_key.go) in a public
 // repository, gist or issue, it posts the matches here. Each request is
 // signed by GitHub (ECDSA P-256, SHA-256) with a key published at
 // tokenGitHubKeysURL; unsigned or wrongly signed requests are refused. A

@@ -9,8 +9,9 @@ import { expect, it } from 'vitest'
 
 import { rememberTokenKey, withSkPrefix } from '../token-key-store'
 
-it('keeps keys in the thetoken_ format as they are', () => {
-  expect(withSkPrefix('thetoken_abc123XYZ')).toBe('thetoken_abc123XYZ')
+it('keeps keys in the tkn_ and earlier thetoken_ formats as they are', () => {
+  expect(withSkPrefix('tkn_abc123XYZ')).toBe('tkn_abc123XYZ')
+  expect(withSkPrefix('tkn_abcd…wxyz')).toBe('tkn_abcd…wxyz')
   expect(withSkPrefix('thetoken_abcd…wxyz')).toBe('thetoken_abcd…wxyz')
 })
 
@@ -20,5 +21,5 @@ it('gives older keys and their hints the sk- prefix once', () => {
 })
 
 it('remembers a new key exactly as issued', () => {
-  expect(rememberTokenKey(7, 'thetoken_abc123XYZ')).toBe('thetoken_abc123XYZ')
+  expect(rememberTokenKey(7, 'tkn_abc123XYZ')).toBe('tkn_abc123XYZ')
 })

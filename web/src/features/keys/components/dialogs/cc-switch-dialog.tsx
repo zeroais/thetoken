@@ -141,7 +141,7 @@ export function CCSwitchDialog(props: Props) {
       toast.warning(t('Please select a primary model'))
       return
     }
-    const key = withSkPrefix(props.tokenKey) // TOKEN: keeps thetoken_ keys
+    const key = withSkPrefix(props.tokenKey) // TOKEN: keeps tkn_ keys
     const url = buildCCSwitchURL(app, name, models, key)
     window.open(url, '_blank')
     props.onOpenChange(false)

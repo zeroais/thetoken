@@ -6,12 +6,18 @@ import (
 )
 
 // TOKEN: API keys have a distinctive format so they can be recognised when
-// leaked (GitHub secret scanning, log scanners): "thetoken_" + 43 random
+// leaked (GitHub secret scanning, log scanners): "tkn_" + 43 random
 // base62 characters (about 256 bits) + a 6-character base62 CRC32 checksum
 // of the random part, like GitHub's own tokens. The checksum lets a scanner
 // reject look-alikes offline. Keys made before this format ("sk-" + 48
 // characters) keep working: authentication hashes whatever the client sends.
-const TokenAPIKeyPrefix = "thetoken_"
+// Keys issued on 2026-10-26 used the prefix "thetoken_" (same body); they
+// keep working and are still recognised.
+const TokenAPIKeyPrefix = "tkn_"
+
+// TokenAPIKeyPrefixes are every prefix TOKEN has issued keys with, current
+// first.
+var TokenAPIKeyPrefixes = []string{TokenAPIKeyPrefix, "thetoken_"}
 
 const (
 	tokenAPIKeyRandomLength   = 43
@@ -27,10 +33,10 @@ func GenerateTokenAPIKey() (string, error) {
 	return TokenAPIKeyPrefix + random + tokenAPIKeyChecksum(random), nil
 }
 
-// IsTokenAPIKey reports whether s is a well-formed TOKEN API key (prefix,
-// length, alphabet and checksum).
+// IsTokenAPIKey reports whether s is a well-formed TOKEN API key (one of
+// TokenAPIKeyPrefixes, length, alphabet and checksum).
 func IsTokenAPIKey(s string) bool {
-	body, ok := strings.CutPrefix(s, TokenAPIKeyPrefix)
+	_, body, ok := CutTokenAPIKeyPrefix(s)
 	if !ok || len(body) != tokenAPIKeyRandomLength+tokenAPIKeyChecksumLength {
 		return false
 	}
@@ -41,6 +47,17 @@ func IsTokenAPIKey(s string) bool {
 	}
 	random, sum := body[:tokenAPIKeyRandomLength], body[tokenAPIKeyRandomLength:]
 	return tokenAPIKeyChecksum(random) == sum
+}
+
+// CutTokenAPIKeyPrefix splits s into the TOKEN key prefix it starts with
+// and the rest.
+func CutTokenAPIKeyPrefix(s string) (prefix, body string, ok bool) {
+	for _, prefix := range TokenAPIKeyPrefixes {
+		if body, ok := strings.CutPrefix(s, prefix); ok {
+			return prefix, body, true
+		}
+	}
+	return "", s, false
 }
 
 // tokenAPIKeyChecksum is the CRC32 (IEEE) of random in base62, left-padded

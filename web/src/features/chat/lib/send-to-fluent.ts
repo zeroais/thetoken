@@ -30,7 +30,7 @@ export function sendToFluent(apiKey: string, serverAddress?: string): boolean {
   const payload = {
     id: 'new-api',
     baseUrl: serverAddress || window.location.origin,
-    apiKey: withSkPrefix(apiKey), // TOKEN: keeps thetoken_ keys as they are
+    apiKey: withSkPrefix(apiKey), // TOKEN: keeps tkn_ keys as they are
   }
 
   container.dispatchEvent(

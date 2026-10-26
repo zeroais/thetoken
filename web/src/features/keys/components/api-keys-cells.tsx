@@ -55,7 +55,7 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
   const isLoading = !!loadingKeys[apiKey.id]
   const resolvedFullKey = resolvedKeys[apiKey.id]
   const isCopied = copiedKeyId === apiKey.id
-  const maskedKey = withSkPrefix(apiKey.key) // TOKEN: thetoken_ hints as they are
+  const maskedKey = withSkPrefix(apiKey.key) // TOKEN: tkn_ hints as they are
 
   // TOKEN: keys are shown once; only keys issued in this tab can be revealed.
   const handlePopoverOpen = useCallback((open: boolean) => {
