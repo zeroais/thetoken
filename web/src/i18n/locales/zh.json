@@ -1049,6 +1049,7 @@
     "Channels deleted successfully": "渠道删除成功",
     "Channels must also enable Auto Ban before automatic disabling can take effect.": "各渠道还需开启“自动禁用”，全局禁用规则才会对其生效。",
     "Character chat, storytelling, persona": "角色对话、剧情创作、人设扮演",
+    "Charge details were not recorded for this order.": "此订单未记录收费明细。",
     "Charge.": "扣费。",
     "Charged in Saudi riyals: {{amount}} SAR (1 USD = {{rate}} SAR)": "以沙特里亚尔扣款：{{amount}} SAR（1 USD = {{rate}} SAR）",
     "Chart Preferences": "图表偏好设置",

@@ -228,12 +228,22 @@ export function BillingHistoryDialog({
                             {formatTimestamp(record.create_time)}
                           </div>
                         </div>
-                        <StatusBadge
-                          label={t(statusConfig.label)}
-                          variant={statusConfig.variant}
-                          showDot
-                          copyable={false}
-                        />
+                        <div className='flex items-center gap-1.5'>
+                          {/* TOKEN: paid with test keys, no real money */}
+                          {record.test_mode && (
+                            <StatusBadge
+                              label={t('Test')}
+                              variant='warning'
+                              copyable={false}
+                            />
+                          )}
+                          <StatusBadge
+                            label={t(statusConfig.label)}
+                            variant={statusConfig.variant}
+                            showDot
+                            copyable={false}
+                          />
+                        </div>
                       </div>
 
                       {/* Details Grid */}
@@ -247,7 +257,8 @@ export function BillingHistoryDialog({
                           </div>
                         </div>
                         {/* TOKEN: itemised when the order recorded its charge */}
-                        {record.charge ? (
+                        {record.charge ||
+                        record.payment_method === 'moyasar' ? (
                           <TopupChargeDetails
                             creditUSD={record.amount}
                             charge={record.charge}

@@ -281,11 +281,14 @@ export interface TopupRecord {
   status: TopupStatus
   /** TOKEN: what the order charged, itemised (Moyasar orders) */
   charge?: TopupCharge
+  /** TOKEN: paid with the gateway's test keys (no real money) */
+  test_mode?: boolean
 }
 
 /** TOKEN: an order's charge in minor units of its currency (halalas for SAR) */
 export interface TopupCharge {
   currency: string
+  mode?: string
   base_minor: number
   fee_minor: number
   total_minor: number

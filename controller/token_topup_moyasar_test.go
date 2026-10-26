@@ -328,9 +328,10 @@ func TestMoyasarOrderHistoryIsItemised(t *testing.T) {
 		var resp struct {
 			Data struct {
 				Items []struct {
-					Amount int64                   `json:"amount"`
-					Money  float64                 `json:"money"`
-					Charge *model.TokenTopUpCharge `json:"charge"`
+					Amount   int64                   `json:"amount"`
+					Money    float64                 `json:"money"`
+					Charge   *model.TokenTopUpCharge `json:"charge"`
+					TestMode bool                    `json:"test_mode"`
 				} `json:"items"`
 			} `json:"data"`
 		}
@@ -339,8 +340,24 @@ func TestMoyasarOrderHistoryIsItemised(t *testing.T) {
 		item := resp.Data.Items[0]
 		assert.EqualValues(t, 10, item.Amount)
 		require.NotNil(t, item.Charge, rec.Body.String())
-		assert.Equal(t, model.TokenTopUpCharge{Currency: "SAR", BaseMinor: 3750, FeeMinor: 207, TotalMinor: 3957}, *item.Charge,
+		assert.Equal(t, model.TokenTopUpCharge{Currency: "SAR", Mode: "test", BaseMinor: 3750, FeeMinor: 207, TotalMinor: 3957}, *item.Charge,
 			"$10 of credit is 37.50 SAR, the 5.5% fee rounds up to 2.07 SAR")
+		assert.True(t, item.TestMode, "paid with test keys")
+
+		// An order from before charges were recorded (the 23 October test
+		// payments) is marked as a test-mode order.
+		require.NoError(t, model.DB.Create(&model.TopUp{UserId: customer.Id, Amount: 100, Money: 100, TradeNo: "moyasar_old-test-order",
+			PaymentMethod: model.PaymentMethodMoyasar, PaymentProvider: model.PaymentProviderMoyasar, Status: common.TopUpStatusSuccess, CreateTime: time.Now().Unix()}).Error)
+		rec = httptest.NewRecorder()
+		c, _ = gin.CreateTestContext(rec)
+		c.Request = httptest.NewRequest(http.MethodGet, "/api/user/topup/self?p=1&page_size=10", nil)
+		c.Set("id", customer.Id)
+		GetUserTopUps(c)
+		require.NoError(t, common.Unmarshal(rec.Body.Bytes(), &resp), rec.Body.String())
+		require.Len(t, resp.Data.Items, 2)
+		for _, it := range resp.Data.Items {
+			assert.True(t, it.TestMode)
+		}
 	})
 }
 

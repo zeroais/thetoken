@@ -16,7 +16,8 @@ import type { TopupCharge } from '../../types'
 interface TopupChargeDetailsProps {
   /** Credit added to the wallet, in USD */
   creditUSD: number
-  charge: TopupCharge
+  /** Missing on orders from before charges were recorded (25 October 2026) */
+  charge?: TopupCharge
 }
 
 const money = (usd: number) =>
@@ -33,10 +34,10 @@ const money = (usd: number) =>
  */
 export function TopupChargeDetails(props: TopupChargeDetailsProps) {
   const { t } = useTranslation()
+  const charge = props.charge
   const amount = (minor: number) => {
     const major = (minor / 100).toFixed(2)
-    if (props.charge.currency !== 'SAR')
-      return `${props.charge.currency} ${major}`
+    if (charge?.currency !== 'SAR') return `${charge?.currency} ${major}`
     return `SAR ${major} (${money(minor / 100 / MOYASAR_SAR_PER_USD)})`
   }
   return (
@@ -47,22 +48,30 @@ export function TopupChargeDetails(props: TopupChargeDetailsProps) {
         </Label>
         <div className='text-sm font-semibold'>{money(props.creditUSD)}</div>
       </div>
-      <div className='space-y-1'>
-        <Label className='text-muted-foreground text-xs'>
-          {t('Credit purchase fee')}
-        </Label>
-        <div className='text-sm font-medium'>
-          {amount(props.charge.fee_minor)}
-        </div>
-      </div>
-      <div className='space-y-1'>
-        <Label className='text-muted-foreground text-xs'>
-          {t('Total paid')}
-        </Label>
-        <div className='text-sm font-semibold'>
-          {amount(props.charge.total_minor)}
-        </div>
-      </div>
+      {charge ? (
+        <>
+          <div className='space-y-1'>
+            <Label className='text-muted-foreground text-xs'>
+              {t('Credit purchase fee')}
+            </Label>
+            <div className='text-sm font-medium'>
+              {amount(charge.fee_minor)}
+            </div>
+          </div>
+          <div className='space-y-1'>
+            <Label className='text-muted-foreground text-xs'>
+              {t('Total paid')}
+            </Label>
+            <div className='text-sm font-semibold'>
+              {amount(charge.total_minor)}
+            </div>
+          </div>
+        </>
+      ) : (
+        <p className='text-muted-foreground col-span-2 self-end text-xs'>
+          {t('Charge details were not recorded for this order.')}
+        </p>
+      )}
     </>
   )
 }

@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-760a73656522`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-4141c2e4d3d3`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -212,6 +212,7 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/wallet/api.ts` | 2026-10-25 |
 | A | `web/src/features/wallet/components/dialogs/__tests__/payment-confirm-dialog.test.tsx` | 2026-10-25 |
 | A | `web/src/features/wallet/components/dialogs/__tests__/token-moyasar-resync.test.tsx` | 2026-10-25 |
+| A | `web/src/features/wallet/components/dialogs/__tests__/token-topup-charge.test.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/dialogs/billing-history-dialog.tsx` | 2026-10-25 |
 | M | `web/src/features/wallet/components/dialogs/payment-confirm-dialog.tsx` | 2026-10-25 |
 | A | `web/src/features/wallet/components/dialogs/token-moyasar-resync.tsx` | 2026-10-25 |

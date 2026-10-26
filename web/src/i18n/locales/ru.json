@@ -1049,6 +1049,7 @@
     "Channels deleted successfully": "Каналы успешно удалены",
     "Channels must also enable Auto Ban before automatic disabling can take effect.": "Для применения правил автоотключение также должно быть включено у самого канала.",
     "Character chat, storytelling, persona": "Диалог с персонажем, сторителлинг, персона",
+    "Charge details were not recorded for this order.": "Детали оплаты для этого заказа не сохранены.",
     "Charge.": "Списание.",
     "Charged in Saudi riyals: {{amount}} SAR (1 USD = {{rate}} SAR)": "Списание в саудовских риялах: {{amount}} SAR (1 USD = {{rate}} SAR)",
     "Chart Preferences": "Настройки графиков",

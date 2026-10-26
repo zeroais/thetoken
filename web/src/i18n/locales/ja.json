@@ -1049,6 +1049,7 @@
     "Channels deleted successfully": "チャネルが正常に削除されました",
     "Channels must also enable Auto Ban before automatic disabling can take effect.": "自動無効化ルールを適用するには、各チャネルでも自動無効化を有効にしてください。",
     "Character chat, storytelling, persona": "キャラクター会話・ストーリーテリング・ペルソナ",
+    "Charge details were not recorded for this order.": "この注文の請求明細は記録されていません。",
     "Charge.": "課金する。",
     "Charged in Saudi riyals: {{amount}} SAR (1 USD = {{rate}} SAR)": "サウジアラビア・リヤルで請求: {{amount}} SAR（1 USD = {{rate}} SAR）",
     "Chart Preferences": "チャートの環境設定",

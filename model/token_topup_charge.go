@@ -13,16 +13,17 @@ import (
 type TokenTopUpCharge struct {
 	TradeNo    string `json:"-" gorm:"primaryKey;type:varchar(255)"`
 	Currency   string `json:"currency" gorm:"type:varchar(8)"`
-	BaseMinor  int64  `json:"base_minor"`  // price of the credit
-	FeeMinor   int64  `json:"fee_minor"`   // credit purchase fee
-	TotalMinor int64  `json:"total_minor"` // amount charged
+	Mode       string `json:"mode" gorm:"type:varchar(8)"` // gateway mode: "test" or "live"
+	BaseMinor  int64  `json:"base_minor"`                  // price of the credit
+	FeeMinor   int64  `json:"fee_minor"`                   // credit purchase fee
+	TotalMinor int64  `json:"total_minor"`                 // amount charged
 	CreatedAt  int64  `json:"-"`
 }
 
 // TokenRecordTopUpCharge stores an order's charge (once per order number).
-func TokenRecordTopUpCharge(tradeNo, currency string, baseMinor, feeMinor, totalMinor int64) error {
+func TokenRecordTopUpCharge(tradeNo, currency, mode string, baseMinor, feeMinor, totalMinor int64) error {
 	return DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&TokenTopUpCharge{
-		TradeNo: tradeNo, Currency: currency, BaseMinor: baseMinor, FeeMinor: feeMinor, TotalMinor: totalMinor,
+		TradeNo: tradeNo, Currency: currency, Mode: mode, BaseMinor: baseMinor, FeeMinor: feeMinor, TotalMinor: totalMinor,
 		CreatedAt: common.GetTimestamp(),
 	}).Error
 }
@@ -31,6 +32,11 @@ func TokenRecordTopUpCharge(tradeNo, currency string, baseMinor, feeMinor, total
 type TokenTopUpWithCharge struct {
 	*TopUp
 	Charge *TokenTopUpCharge `json:"charge,omitempty"`
+	// TestMode: paid with the gateway's test keys (no real money). Orders
+	// record their mode since 2026-10-25; Moyasar orders without a charge
+	// record are the test-mode orders from before then (Moyasar went live
+	// after charges were recorded).
+	TestMode bool `json:"test_mode,omitempty"`
 }
 
 // TokenWithCharges attaches each order's recorded charge (orders created
@@ -54,7 +60,10 @@ func TokenWithCharges(topups []*TopUp) ([]TokenTopUpWithCharge, error) {
 		byTradeNo[charges[i].TradeNo] = &charges[i]
 	}
 	for _, t := range topups {
-		out = append(out, TokenTopUpWithCharge{TopUp: t, Charge: byTradeNo[t.TradeNo]})
+		charge := byTradeNo[t.TradeNo]
+		test := charge != nil && charge.Mode == "test" ||
+			charge == nil && t.PaymentProvider == PaymentProviderMoyasar
+		out = append(out, TokenTopUpWithCharge{TopUp: t, Charge: charge, TestMode: test})
 	}
 	return out, nil
 }

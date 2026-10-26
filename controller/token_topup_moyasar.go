@@ -223,7 +223,11 @@ func RequestMoyasarPay(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Could not start the payment"})
 		return
 	}
-	if err := model.TokenRecordTopUpCharge(topUp.TradeNo, "SAR", q.BaseHalalas, q.FeeHalalas, q.TotalHalalas); err != nil {
+	mode := "live"
+	if moyasarTestMode() {
+		mode = "test"
+	}
+	if err := model.TokenRecordTopUpCharge(topUp.TradeNo, "SAR", mode, q.BaseHalalas, q.FeeHalalas, q.TotalHalalas); err != nil {
 		// The order still works; only its itemised history line is missing.
 		logger.LogError(ctx, fmt.Sprintf("Moyasar order charge not recorded invoice=%s error=%q", inv.ID, err.Error()))
 	}
