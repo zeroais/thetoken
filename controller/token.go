@@ -321,7 +321,7 @@ func AddToken(c *gin.Context) {
 		token.CrossGroupRetry = false
 		_ = token.SetAutoGroups(nil)
 	}
-	key, err := common.GenerateKey()
+	key, err := common.GenerateTokenAPIKey() // TOKEN: distinctive key format
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgTokenGenerateFailed)
 		common.SysLog("failed to generate token key: " + err.Error())
@@ -354,7 +354,7 @@ func AddToken(c *gin.Context) {
 		"success": true,
 		"message": "",
 		// TOKEN: the only time the key is shown; only its hash is stored.
-		"data": gin.H{"id": cleanToken.Id, "name": cleanToken.Name, "key": "sk-" + key},
+		"data": gin.H{"id": cleanToken.Id, "name": cleanToken.Name, "key": key}, // TOKEN: the key carries its own prefix
 	})
 }
 

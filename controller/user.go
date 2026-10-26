@@ -303,7 +303,7 @@ func Register(c *gin.Context) {
 	}
 	// 生成默认令牌
 	if constant.GenerateDefaultToken {
-		key, err := common.GenerateKey()
+		key, err := common.GenerateTokenAPIKey() // TOKEN: distinctive key format
 		if err != nil {
 			common.ApiErrorI18n(c, i18n.MsgUserDefaultTokenFailed)
 			common.SysLog("failed to generate token key: " + err.Error())

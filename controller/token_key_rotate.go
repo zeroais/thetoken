@@ -26,5 +26,5 @@ func RotateTokenKey(c *gin.Context) {
 		return
 	}
 	common.SetContextKey(c, constant.ContextKeyTokenAuditSucceeded, true)
-	common.ApiSuccess(c, gin.H{"id": id, "key": "sk-" + key})
+	common.ApiSuccess(c, gin.H{"id": id, "key": key}) // the key carries its own prefix
 }

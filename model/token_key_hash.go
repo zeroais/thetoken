@@ -41,8 +41,13 @@ func IsHashedTokenKey(stored string) bool {
 }
 
 // TokenKeyHint is the display form of a plaintext key, "abcd…wxyz" (without
-// "sk-", like upstream's masked key, which clients prefix).
+// "sk-", like upstream's masked key, which clients prefix). Keys in TOKEN's
+// format keep their prefix, "thetoken_abcd…wxyz", so the console shows them
+// as they are.
 func TokenKeyHint(raw string) string {
+	if body, ok := strings.CutPrefix(raw, common.TokenAPIKeyPrefix); ok && len(body) > 8 {
+		return common.TokenAPIKeyPrefix + body[:4] + "…" + body[len(body)-4:]
+	}
 	raw = strings.TrimPrefix(raw, "sk-")
 	if len(raw) <= 8 {
 		return "…"
@@ -66,7 +71,7 @@ func RotateTokenKey(id, userId int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	raw, err := common.GenerateKey()
+	raw, err := common.GenerateTokenAPIKey()
 	if err != nil {
 		return "", err
 	}

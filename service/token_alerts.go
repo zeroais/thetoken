@@ -34,8 +34,9 @@ import (
 const tokenAlertRepeat = 6 * time.Hour
 
 type tokenAlert struct {
-	Key  string // dedup key: kind and subject
-	Text string
+	Key    string // dedup key: kind and subject
+	Text   string
+	Repeat time.Duration // how often it is mailed again (0: tokenAlertRepeat)
 }
 
 // StartTokenAlerts runs the checks in the background for the process's life:
@@ -190,7 +191,55 @@ func tokenCheckAlerts(ctx context.Context, now time.Time, s *operation_setting.T
 			}
 		}
 	}
+	alerts = append(alerts, tokenBudgetAlerts(ctx, now, s, fail)...)
 	sort.Slice(alerts, func(i, j int) bool { return alerts[i].Key < alerts[j].Key })
+	return alerts
+}
+
+// tokenBudgetAlerts warns when a key in BudgetKeyIDs (the status-page
+// monitors' key) has fewer than BudgetDays days of spending left: its
+// remaining limit or its account's balance, whichever is lower, divided by
+// its average daily spending over the last 7 days. Mailed once a week.
+func tokenBudgetAlerts(ctx context.Context, now time.Time, s *operation_setting.TokenAlertSetting, fail func(string, error)) []tokenAlert {
+	if len(s.BudgetKeyIDs) == 0 || s.BudgetDays <= 0 {
+		return nil
+	}
+	var alerts []tokenAlert
+	for _, id := range s.BudgetKeyIDs {
+		key, err := model.GetTokenById(id)
+		if err != nil {
+			fail(fmt.Sprintf("budget key #%d", id), err)
+			continue
+		}
+		spent, err := model.TokenSpendOf(model.LOG_DB, "token_id", id, now.Add(-7*24*time.Hour).Unix(), now.Unix())
+		if err != nil {
+			fail(fmt.Sprintf("budget key #%d spending", id), err)
+			continue
+		}
+		if spent <= 0 {
+			continue // idle: nothing runs out
+		}
+		balance, err := model.GetUserQuota(key.UserId, true)
+		if err != nil {
+			fail(fmt.Sprintf("budget key #%d balance", id), err)
+			continue
+		}
+		left, limit := int64(balance), "its account's balance"
+		if !key.UnlimitedQuota && int64(key.RemainQuota) < left {
+			left, limit = int64(key.RemainQuota), "its spending limit"
+		}
+		daily := float64(spent) / 7
+		days := float64(max(left, 0)) / daily
+		if days >= float64(s.BudgetDays) {
+			continue
+		}
+		alerts = append(alerts, tokenAlert{
+			Key:    fmt.Sprintf("key-budget:%d", id),
+			Repeat: 7 * 24 * time.Hour,
+			Text: fmt.Sprintf("API key #%d (%s) has about %.0f days left: %s has $%.2f, and it spends $%.2f a day (last 7 days). Raise the limit or top up the account before it runs out.",
+				id, key.Name, days, limit, tokenUSD(left), tokenUSD(int64(daily))),
+		})
+	}
 	return alerts
 }
 
@@ -318,7 +367,7 @@ func tokenRememberBalance(provider string, now time.Time, usd float64) (float64,
 func tokenSendAlerts(alerts []tokenAlert, to string) error {
 	var fresh []tokenAlert
 	for _, a := range alerts {
-		if tokenAlertNew(a.Key) {
+		if tokenAlertNewFor(a.Key, a.Repeat) {
 			fresh = append(fresh, a)
 		}
 	}
@@ -341,13 +390,22 @@ var tokenAlertsSent = struct {
 }{at: map[string]time.Time{}}
 
 func tokenAlertNew(key string) bool {
+	return tokenAlertNewFor(key, 0)
+}
+
+// tokenAlertNewFor reports whether a finding is due to be mailed (once per
+// repeat; 0 means tokenAlertRepeat).
+func tokenAlertNewFor(key string, repeat time.Duration) bool {
+	if repeat <= 0 {
+		repeat = tokenAlertRepeat
+	}
 	if common.RedisEnabled && common.RDB != nil {
-		ok, err := common.RDB.SetNX(context.Background(), "token:alerts:sent:"+key, 1, tokenAlertRepeat).Result()
+		ok, err := common.RDB.SetNX(context.Background(), "token:alerts:sent:"+key, 1, repeat).Result()
 		return err != nil || ok
 	}
 	tokenAlertsSent.Lock()
 	defer tokenAlertsSent.Unlock()
-	if at, ok := tokenAlertsSent.at[key]; ok && time.Since(at) < tokenAlertRepeat {
+	if at, ok := tokenAlertsSent.at[key]; ok && time.Since(at) < repeat {
 		return false
 	}
 	tokenAlertsSent.at[key] = time.Now()

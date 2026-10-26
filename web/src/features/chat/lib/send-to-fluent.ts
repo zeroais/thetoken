@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { withSkPrefix } from '@/features/keys/lib/token-key-store' // TOKEN
 export function sendToFluent(apiKey: string, serverAddress?: string): boolean {
   if (typeof window === 'undefined') {
     return false
@@ -29,7 +30,7 @@ export function sendToFluent(apiKey: string, serverAddress?: string): boolean {
   const payload = {
     id: 'new-api',
     baseUrl: serverAddress || window.location.origin,
-    apiKey: `sk-${apiKey}`,
+    apiKey: withSkPrefix(apiKey), // TOKEN: keeps thetoken_ keys as they are
   }
 
   container.dispatchEvent(

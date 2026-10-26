@@ -10,8 +10,15 @@ const knownKeys = new Map<number, string>()
 export const KEY_SHOWN_ONCE_MESSAGE =
   'API keys are shown only once, when they are created. Rotate the key to get a new one.'
 
+/**
+ * The key as a client sends it: keys in TOKEN's format ("thetoken_…",
+ * common/token_api_key.go) are complete; older keys and the masked hints of
+ * older keys get upstream's "sk-" prefix.
+ */
 export function withSkPrefix(key: string): string {
-  return key.startsWith('sk-') ? key : `sk-${key}`
+  return key.startsWith('sk-') || key.startsWith('thetoken_')
+    ? key
+    : `sk-${key}`
 }
 
 export function rememberTokenKey(id: number, key: string): string {

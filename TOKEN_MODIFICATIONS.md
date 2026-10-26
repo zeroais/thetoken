@@ -1,7 +1,7 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-4141c2e4d3d3`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ae791bfb3786`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
@@ -9,6 +9,7 @@ Files not listed are New API's, unchanged.
 | A | `.env.token.example` | 2026-10-24 |
 | A | `.githooks/pre-commit` | 2026-10-09 |
 | M | `Dockerfile` | 2026-10-20 |
+| A | `common/token_api_key.go` | 2026-10-26 |
 | A | `common/token_brand.go` | 2026-10-09 |
 | A | `common/token_deploy.go` | 2026-10-25 |
 | A | `common/token_verification.go` | 2026-10-25 |
@@ -19,11 +20,13 @@ Files not listed are New API's, unchanged.
 | M | `controller/relay.go` | 2026-10-24 |
 | M | `controller/responses_websocket_test.go` | 2026-10-25 |
 | M | `controller/setup.go` | 2026-10-21 |
-| M | `controller/token.go` | 2026-10-09 |
+| M | `controller/token.go` | 2026-10-26 |
 | A | `controller/token_admin_mfa_guard.go` | 2026-10-09 |
 | A | `controller/token_admin_mfa_guard_test.go` | 2026-10-09 |
 | A | `controller/token_api_root.go` | 2026-10-24 |
-| A | `controller/token_key_rotate.go` | 2026-10-09 |
+| A | `controller/token_github_secret_scanning.go` | 2026-10-26 |
+| A | `controller/token_github_secret_scanning_test.go` | 2026-10-26 |
+| A | `controller/token_key_rotate.go` | 2026-10-26 |
 | A | `controller/token_moyasar_chargeback.go` | 2026-10-25 |
 | A | `controller/token_moyasar_pricing.go` | 2026-10-22 |
 | A | `controller/token_moyasar_resync.go` | 2026-10-25 |
@@ -47,7 +50,7 @@ Files not listed are New API's, unchanged.
 | M | `controller/topup_waffo.go` | 2026-10-09 |
 | M | `controller/topup_waffo_pancake.go` | 2026-10-09 |
 | M | `controller/twofa.go` | 2026-10-09 |
-| M | `controller/user.go` | 2026-10-25 |
+| M | `controller/user.go` | 2026-10-26 |
 | A | `docker-compose.token.yml` | 2026-10-25 |
 | A | `docs/UPSTREAM_README.md` | 2026-10-09 |
 | M | `go.mod` | 2026-10-24 |
@@ -77,8 +80,8 @@ Files not listed are New API's, unchanged.
 | A | `model/token_alerts.go` | 2026-10-25 |
 | A | `model/token_alerts_test.go` | 2026-10-25 |
 | A | `model/token_hooks.go` | 2026-10-09 |
-| A | `model/token_key_hash.go` | 2026-10-09 |
-| A | `model/token_key_hash_test.go` | 2026-10-09 |
+| A | `model/token_key_hash.go` | 2026-10-26 |
+| A | `model/token_key_hash_test.go` | 2026-10-26 |
 | A | `model/token_log_text.go` | 2026-10-25 |
 | A | `model/token_log_text_test.go` | 2026-10-25 |
 | M | `model/token_migration_test.go` | 2026-10-09 |
@@ -114,14 +117,14 @@ Files not listed are New API's, unchanged.
 | M | `router/main.go` | 2026-10-24 |
 | M | `router/relay-router.go` | 2026-10-25 |
 | M | `router/relay_router_test.go` | 2026-10-24 |
-| A | `router/token_public_router.go` | 2026-10-24 |
+| A | `router/token_public_router.go` | 2026-10-26 |
 | M | `service/authz/enforcer.go` | 2026-10-18 |
 | M | `service/billing_session.go` | 2026-10-25 |
 | M | `service/email_binding.go` | 2026-10-22 |
 | M | `service/quota.go` | 2026-10-09 |
 | M | `service/relay_error.go` | 2026-10-09 |
-| A | `service/token_alerts.go` | 2026-10-25 |
-| A | `service/token_alerts_test.go` | 2026-10-25 |
+| A | `service/token_alerts.go` | 2026-10-26 |
+| A | `service/token_alerts_test.go` | 2026-10-26 |
 | A | `service/token_disposable_domains.txt` | 2026-10-22 |
 | A | `service/token_disposable_email.go` | 2026-10-22 |
 | A | `service/token_disposable_email_test.go` | 2026-10-22 |
@@ -131,7 +134,7 @@ Files not listed are New API's, unchanged.
 | A | `service/token_key_networks.go` | 2026-10-25 |
 | A | `service/token_restore_drill.go` | 2026-10-25 |
 | A | `service/token_restore_drill_test.go` | 2026-10-25 |
-| A | `setting/operation_setting/token_alerts.go` | 2026-10-25 |
+| A | `setting/operation_setting/token_alerts.go` | 2026-10-26 |
 | A | `setting/operation_setting/token_billing.go` | 2026-10-25 |
 | A | `setting/operation_setting/token_billing_test.go` | 2026-10-10 |
 | A | `setting/operation_setting/token_brand.go` | 2026-10-09 |
@@ -164,8 +167,10 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/auth/sign-up/components/sign-up-form.tsx` | 2026-10-25 |
 | M | `web/src/features/channels/api.ts` | 2026-10-24 |
 | M | `web/src/features/chat/hooks/use-active-chat-key.ts` | 2026-10-09 |
+| M | `web/src/features/chat/lib/chat-links.ts` | 2026-10-26 |
+| M | `web/src/features/chat/lib/send-to-fluent.ts` | 2026-10-26 |
 | A | `web/src/features/dashboard/components/overview/__tests__/request-preview.test.tsx` | 2026-10-21 |
-| M | `web/src/features/dashboard/components/overview/overview-dashboard.tsx` | 2026-10-21 |
+| M | `web/src/features/dashboard/components/overview/overview-dashboard.tsx` | 2026-10-26 |
 | A | `web/src/features/home/__tests__/token-home.test.tsx` | 2026-10-24 |
 | M | `web/src/features/home/components/hero-terminal-demo.tsx` | 2026-10-24 |
 | M | `web/src/features/home/components/sections/features.tsx` | 2026-10-23 |
@@ -174,17 +179,19 @@ Files not listed are New API's, unchanged.
 | M | `web/src/features/keys/api.ts` | 2026-10-09 |
 | M | `web/src/features/keys/components/__tests__/api-key-listing.test.tsx` | 2026-10-09 |
 | A | `web/src/features/keys/components/__tests__/token-key-spending-limit.test.tsx` | 2026-10-25 |
-| M | `web/src/features/keys/components/api-keys-cells.tsx` | 2026-10-09 |
+| M | `web/src/features/keys/components/api-keys-cells.tsx` | 2026-10-26 |
 | M | `web/src/features/keys/components/api-keys-dialogs.tsx` | 2026-10-09 |
 | M | `web/src/features/keys/components/api-keys-mutate-drawer.tsx` | 2026-10-25 |
 | M | `web/src/features/keys/components/api-keys-provider.tsx` | 2026-10-09 |
 | M | `web/src/features/keys/components/data-table-row-actions.tsx` | 2026-10-09 |
+| M | `web/src/features/keys/components/dialogs/cc-switch-dialog.tsx` | 2026-10-26 |
 | A | `web/src/features/keys/components/dialogs/rotate-key-dialog.tsx` | 2026-10-09 |
 | A | `web/src/features/keys/components/dialogs/show-once-key-dialog.tsx` | 2026-10-09 |
 | A | `web/src/features/keys/components/token-key-spending-limit.tsx` | 2026-10-25 |
 | A | `web/src/features/keys/lib/__tests__/token-default-group.test.ts` | 2026-10-24 |
+| A | `web/src/features/keys/lib/__tests__/token-key-store.test.ts` | 2026-10-26 |
 | M | `web/src/features/keys/lib/api-key-form.ts` | 2026-10-24 |
-| A | `web/src/features/keys/lib/token-key-store.ts` | 2026-10-09 |
+| A | `web/src/features/keys/lib/token-key-store.ts` | 2026-10-26 |
 | M | `web/src/features/keys/types.ts` | 2026-10-09 |
 | M | `web/src/features/models/__tests__/vendor-management.test.tsx` | 2026-10-24 |
 | A | `web/src/features/pricing/__tests__/model-details-api.test.tsx` | 2026-10-21 |

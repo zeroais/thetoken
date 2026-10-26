@@ -30,6 +30,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getUserModels } from '@/lib/api'
 import { requireServerSuccess } from '@/lib/server-error-message'
 
+import { withSkPrefix } from '../../lib/token-key-store' // TOKEN
+
 const APP_CONFIGS = {
   claude: {
     label: 'Claude',
@@ -139,9 +141,7 @@ export function CCSwitchDialog(props: Props) {
       toast.warning(t('Please select a primary model'))
       return
     }
-    const key = props.tokenKey.startsWith('sk-')
-      ? props.tokenKey
-      : `sk-${props.tokenKey}`
+    const key = withSkPrefix(props.tokenKey) // TOKEN: keeps thetoken_ keys
     const url = buildCCSwitchURL(app, name, models, key)
     window.open(url, '_blank')
     props.onOpenChange(false)

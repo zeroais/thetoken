@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -98,4 +99,37 @@ func TestOperatorAlertsFlagAbnormalActivityOnly(t *testing.T) {
 
 	assert.True(t, tokenAlertNew("spend:user_id:1"))
 	assert.False(t, tokenAlertNew("spend:user_id:1"), "a finding is mailed once per 6 hours")
+}
+
+// TOKEN: the monitors' key warns when its spending limit or its account's
+// balance lasts fewer than budget_days at the last 7 days' rate.
+func TestBudgetKeyWarnsBeforeItRunsOut(t *testing.T) {
+	truncate(t)
+	now := time.Now()
+	usd := func(v float64) int { return int(v * common.QuotaPerUnit) }
+	owner := model.User{Username: "budget-owner", AffCode: "budget-owner", Quota: usd(300)}
+	require.NoError(t, model.DB.Create(&owner).Error)
+	short := model.Token{UserId: owner.Id, Name: "status-monitors", Key: "budget-short-key", RemainQuota: usd(2.5), Status: common.TokenStatusEnabled}
+	long := model.Token{UserId: owner.Id, Name: "plenty", Key: "budget-long-key", RemainQuota: usd(45), Status: common.TokenStatusEnabled}
+	require.NoError(t, model.DB.Create(&short).Error)
+	require.NoError(t, model.DB.Create(&long).Error)
+	for d := range 7 { // $0.25 a day each
+		for _, k := range []model.Token{short, long} {
+			require.NoError(t, model.LOG_DB.Create(&model.Log{UserId: owner.Id, TokenId: k.Id, Type: model.LogTypeConsume,
+				CreatedAt: now.Add(-time.Duration(d)*24*time.Hour - time.Hour).Unix(), Quota: usd(0.25)}).Error)
+		}
+	}
+	setting := &operation_setting.TokenAlertSetting{BudgetKeyIDs: []int{short.Id, long.Id}, BudgetDays: 30}
+
+	alerts := tokenCheckAlerts(t.Context(), now, setting)
+	require.Len(t, alerts, 1, "the $2.50 key lasts 10 days; the $45 key lasts 180")
+	assert.Equal(t, fmt.Sprintf("key-budget:%d", short.Id), alerts[0].Key)
+	assert.Contains(t, alerts[0].Text, "about 10 days left: its spending limit has $2.50")
+	assert.Equal(t, 7*24*time.Hour, alerts[0].Repeat, "a reminder a week, not every 6 hours")
+
+	// The account's balance counts too: at $3 the long key's account runs dry first.
+	require.NoError(t, model.DB.Model(&model.User{}).Where("id = ?", owner.Id).Update("quota", usd(3)).Error)
+	alerts = tokenCheckAlerts(t.Context(), now, setting)
+	require.Len(t, alerts, 2)
+	assert.Contains(t, alerts[1].Text+alerts[0].Text, "its account's balance has $3.00")
 }

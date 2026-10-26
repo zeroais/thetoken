@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { API_KEY_STATUS } from '@/features/keys/constants'
+import { withSkPrefix } from '@/features/keys/lib/token-key-store' // TOKEN
 
 export type ChatLinkType = 'web' | 'custom-protocol' | 'fluent'
 
@@ -147,7 +148,7 @@ function replaceToken(source: string, token: string, value: string) {
 function normalizeApiKey(apiKey: string): string {
   const trimmed = apiKey.trim()
   if (!trimmed) return ''
-  return trimmed.startsWith('sk-') ? trimmed : `sk-${trimmed}`
+  return withSkPrefix(trimmed) // TOKEN: keeps thetoken_ keys as they are
 }
 
 export function resolveChatUrl({

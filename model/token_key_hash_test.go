@@ -46,6 +46,44 @@ func TestTokenKeyStoredHashedAndLookedUpByHash(t *testing.T) {
 	assert.ErrorIs(t, err, ErrTokenInvalid, "the hash itself must not authenticate")
 }
 
+// TOKEN: new keys have the distinctive "thetoken_" format (prefix, random
+// part, checksum); they authenticate as sent, and keep their prefix in the
+// display hint. Older "sk-" keys keep working.
+func TestTokenAPIKeyFormat(t *testing.T) {
+	truncateTables(t)
+	raw, err := common.GenerateTokenAPIKey()
+	require.NoError(t, err)
+	assert.True(t, strings.HasPrefix(raw, "thetoken_"))
+	assert.Len(t, raw, len("thetoken_")+43+6)
+	assert.True(t, common.IsTokenAPIKey(raw))
+	other, err := common.GenerateTokenAPIKey()
+	require.NoError(t, err)
+	assert.NotEqual(t, raw, other)
+	tampered := raw[:20] + map[bool]string{true: "A", false: "B"}[raw[20] != 'A'] + raw[21:]
+	assert.False(t, common.IsTokenAPIKey(tampered), "the checksum catches a changed character")
+	assert.False(t, common.IsTokenAPIKey("thetoken_short"))
+	assert.False(t, common.IsTokenAPIKey("sk-"+raw[len("thetoken_"):]))
+
+	token := Token{UserId: 3, Name: "new", Key: raw, Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true}
+	require.NoError(t, token.Insert())
+	var stored Token
+	require.NoError(t, DB.First(&stored, token.Id).Error)
+	assert.Equal(t, "thetoken_"+raw[9:13]+"…"+raw[len(raw)-4:], stored.KeyHint)
+	found, err := ValidateUserToken(HashTokenKey(raw))
+	require.NoError(t, err, "a new key authenticates as sent")
+	assert.Equal(t, token.Id, found.Id)
+	found, err = ValidateUserToken(HashTokenKey("sk-" + raw))
+	require.NoError(t, err, "clients that add sk- still work")
+	assert.Equal(t, token.Id, found.Id)
+
+	legacy := "legacyKey0123456789abcdefghijklmnopqrstuvwxyzAB"
+	old := Token{UserId: 3, Name: "old", Key: legacy, Status: common.TokenStatusEnabled, ExpiredTime: -1, UnlimitedQuota: true}
+	require.NoError(t, old.Insert())
+	found, err = ValidateUserToken(HashTokenKey("sk-" + legacy))
+	require.NoError(t, err, "existing sk- keys keep working")
+	assert.Equal(t, old.Id, found.Id)
+}
+
 func TestMigrateTokenKeyHashes(t *testing.T) {
 	truncateTables(t)
 	legacy := "legacy-plaintext-key-0123456789abcdefghijklmn"
@@ -77,7 +115,7 @@ func TestRotateTokenKey(t *testing.T) {
 
 	raw, err := RotateTokenKey(token.Id, 9)
 	require.NoError(t, err)
-	assert.Len(t, raw, 48)
+	assert.True(t, common.IsTokenAPIKey(raw), "a rotated key is issued in TOKEN's format")
 
 	_, err = GetTokenByKey(HashTokenKey("rotate-old-key-0123456789abcdefghijklmnopqrs"), true)
 	assert.Error(t, err, "the old key stops working")

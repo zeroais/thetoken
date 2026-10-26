@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/tooltip'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 
-import { KEY_SHOWN_ONCE_MESSAGE } from '../lib/token-key-store'
+import { KEY_SHOWN_ONCE_MESSAGE, withSkPrefix } from '../lib/token-key-store'
 import type { ApiKey } from '../types'
 import { useApiKeys } from './api-keys-provider'
 
@@ -55,7 +55,7 @@ export function ApiKeyCell({ apiKey }: { apiKey: ApiKey }) {
   const isLoading = !!loadingKeys[apiKey.id]
   const resolvedFullKey = resolvedKeys[apiKey.id]
   const isCopied = copiedKeyId === apiKey.id
-  const maskedKey = `sk-${apiKey.key}`
+  const maskedKey = withSkPrefix(apiKey.key) // TOKEN: thetoken_ hints as they are
 
   // TOKEN: keys are shown once; only keys issued in this tab can be revealed.
   const handlePopoverOpen = useCallback((open: boolean) => {

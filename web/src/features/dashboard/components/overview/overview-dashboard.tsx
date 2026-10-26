@@ -49,7 +49,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { getApiKeys } from '@/features/keys/api'
-import { getRememberedTokenKey } from '@/features/keys/lib/token-key-store'
+import {
+  getRememberedTokenKey,
+  withSkPrefix,
+} from '@/features/keys/lib/token-key-store'
 import type { ApiKey } from '@/features/keys/types'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { getUserModels } from '@/lib/api'
@@ -619,7 +622,7 @@ export function OverviewDashboard() {
       keyName,
       keyId: preferredKey?.id,
       displayKey: preferredKey
-        ? formatDisplayKey(`sk-${preferredKey.key}`)
+        ? formatDisplayKey(withSkPrefix(preferredKey.key)) // TOKEN
         : 'sk-...',
       ready,
     }

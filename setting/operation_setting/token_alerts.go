@@ -39,6 +39,13 @@ type TokenAlertSetting struct {
 	// API keys left out of the key checks (spending and networks): TOKEN's
 	// own status-page monitors call from many probe addresses on purpose.
 	IgnoreKeyIDs []int `json:"ignore_key_ids"`
+
+	// API keys that must not run dry (the status-page monitors' key): alert
+	// once a week when, at the last 7 days' spending rate, the key's spending
+	// limit or its account's balance (whichever is lower) lasts fewer than
+	// BudgetDays days.
+	BudgetKeyIDs []int `json:"budget_key_ids"`
+	BudgetDays   int   `json:"budget_days"`
 }
 
 // TokenBalanceAPI reads a prepaid balance: GET URL with the key as a bearer
