@@ -283,6 +283,12 @@ func Register(c *gin.Context) {
 	if common.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
 	}
+	// TOKEN: a sign-up code works once: of several sign-ups with the same
+	// code, only one gets past this point.
+	if common.EmailVerificationEnabled && !common.ConsumeCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose) {
+		common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
+		return
+	}
 	if err := cleanUser.Insert(inviterId); err != nil {
 		if errors.Is(err, model.ErrEmailAlreadyTaken) {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
@@ -290,9 +296,6 @@ func Register(c *gin.Context) {
 		}
 		common.ApiError(c, err)
 		return
-	}
-	if common.EmailVerificationEnabled { // TOKEN: a sign-up code works once
-		common.DeleteKey(user.Email, common.EmailVerificationPurpose)
 	}
 
 	// 获取插入后的用户ID

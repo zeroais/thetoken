@@ -1,21 +1,22 @@
 # TOKEN modifications
 
 Files added (A), modified (M) or deleted (D) by TOKEN relative to New API tag
-`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-ff9eb9583c9f`.
+`v1.0.0-rc.42`, with the date of the latest change, as of release `v1.0.0-1d9613d36aa6`.
 Files not listed are New API's, unchanged.
 
 | Status | File | Last changed |
 |---|---|---|
 | A | `.env.token.example` | 2026-10-24 |
 | A | `.githooks/pre-commit` | 2026-10-09 |
+| M | `AGENTS.md` | 2026-10-26 |
 | M | `Dockerfile` | 2026-10-20 |
 | A | `common/token_api_key.go` | 2026-10-26 |
 | A | `common/token_brand.go` | 2026-10-09 |
 | A | `common/token_deploy.go` | 2026-10-25 |
-| A | `common/token_verification.go` | 2026-10-25 |
-| A | `common/token_verification_test.go` | 2026-10-25 |
-| M | `common/verification.go` | 2026-10-25 |
-| M | `controller/misc.go` | 2026-10-09 |
+| A | `common/token_verification.go` | 2026-10-30 |
+| A | `common/token_verification_test.go` | 2026-10-30 |
+| M | `common/verification.go` | 2026-10-30 |
+| M | `controller/misc.go` | 2026-10-30 |
 | M | `controller/passkey.go` | 2026-10-09 |
 | M | `controller/relay.go` | 2026-10-24 |
 | M | `controller/responses_websocket_test.go` | 2026-10-25 |
@@ -50,11 +51,11 @@ Files not listed are New API's, unchanged.
 | M | `controller/topup_waffo.go` | 2026-10-09 |
 | M | `controller/topup_waffo_pancake.go` | 2026-10-09 |
 | M | `controller/twofa.go` | 2026-10-09 |
-| M | `controller/user.go` | 2026-10-26 |
+| M | `controller/user.go` | 2026-10-30 |
 | A | `docker-compose.token.yml` | 2026-10-25 |
 | A | `docs/UPSTREAM_README.md` | 2026-10-09 |
-| M | `go.mod` | 2026-10-24 |
-| M | `go.sum` | 2026-10-24 |
+| M | `go.mod` | 2026-10-30 |
+| M | `go.sum` | 2026-10-30 |
 | M | `main.go` | 2026-10-25 |
 | M | `middleware/access_token_routes.go` | 2026-10-25 |
 | M | `middleware/audit.go` | 2026-10-09 |
@@ -75,7 +76,7 @@ Files not listed are New API's, unchanged.
 | A | `middleware/token_signup_limit_test.go` | 2026-10-22 |
 | M | `middleware/turnstile-check.go` | 2026-10-25 |
 | M | `model/log.go` | 2026-10-24 |
-| M | `model/main.go` | 2026-10-25 |
+| M | `model/main.go` | 2026-10-30 |
 | M | `model/token.go` | 2026-10-09 |
 | A | `model/token_alerts.go` | 2026-10-25 |
 | A | `model/token_alerts_test.go` | 2026-10-25 |
@@ -95,6 +96,8 @@ Files not listed are New API's, unchanged.
 | A | `model/token_starter_credit_test.go` | 2026-10-25 |
 | A | `model/token_topup_charge.go` | 2026-10-25 |
 | A | `model/token_topup_moyasar.go` | 2026-10-17 |
+| A | `model/token_verification_code.go` | 2026-10-30 |
+| A | `model/token_verification_code_test.go` | 2026-10-30 |
 | M | `model/user.go` | 2026-10-22 |
 | M | `pkg/perf_metrics/flush.go` | 2026-10-24 |
 | M | `pkg/perf_metrics/metrics.go` | 2026-10-24 |

@@ -48,7 +48,7 @@ func RegisterVerificationCodeWithKey(key string, code string, purpose string) {
 }
 
 func VerifyCodeWithKey(key string, code string, purpose string) bool {
-	if tokenVerificationCodeInRedis(key, code, purpose) { // TOKEN: shared by instances
+	if tokenCheckVerificationCode(key, code, purpose, false) { // TOKEN: shared by instances
 		return true
 	}
 	verificationMutex.Lock()

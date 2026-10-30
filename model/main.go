@@ -395,6 +395,9 @@ func migrateDB() error {
 	if err := DB.AutoMigrate(&TokenPerfHistogram{}); err != nil { // TOKEN: public latency percentiles
 		return err
 	}
+	if err := DB.AutoMigrate(&TokenVerificationCode{}); err != nil { // TOKEN: shared verification codes
+		return err
+	}
 	if err := InitializeUserAuthVersions(); err != nil {
 		return err
 	}
